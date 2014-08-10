@@ -211,14 +211,41 @@ def cmdDict( defaultDic={} ):
     """
     return get_cmdDict( sys.argv[1:], defaultDic )
 
+## see: http://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
+def askForFile(defaultextension='*.csv', 
+               filetypes=(('Comma-separated values (CSV)', '*.csv'),
+                          ('Text file', '*.txt'),
+                          ('All files', '*.*')), 
+               initialdir='', 
+               initialfile='', 
+               multiple=False, 
+               title=None):
+    """present simple Open File Dialog to user and return selected file."""
+
+    import Tkinter, tkFileDialog
+    
+    root = Tkinter.Tk()
+    root.withdraw()
+
+    options = dict(defaultextension=defaultextension, 
+               filetypes=filetypes,
+               initialdir=initialdir, 
+               initialfile=initialfile, 
+               multiple=multiple, 
+               title=title)
+    
+    r = tkFileDialog.askopenfilename(**options)
+    return r or default
+
+
 ######################
 ### Module testing ###
-import test
+import testing
 
-class Test(test.AutoTest):
+class Test(testing.AutoTest):
     """Test MyModule"""
 
-    TAGS = [ test.NORMAL ]
+    TAGS = [ testing.NORMAL ]
 
     def prepare( self ):
         self.fname1 = '~/nonexistent/../subfolder/file.txt'
@@ -233,8 +260,16 @@ class Test(test.AutoTest):
         r = absfile( self.fname1 )
         self.assertEqual( r,
                           osp.join( osp.expanduser('~'), 'subfolder/file.txt'))
+        
+    def test_askForFile( self ):
+        """fileutil.askForFile test"""
+        import unittest
+        r = askForFile(title='Test File')
+        assert isinstance(self, unittest.TestCase)
+        self.assertNotEqual(r, 'test.dat')
+        
 
 if __name__ == '__main__':
 
-    test.localTest()
+    testing.localTest()
 
