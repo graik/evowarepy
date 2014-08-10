@@ -146,9 +146,9 @@ def packageRoot():
     @return: str, absolute path of the root of current project
     """
     ## import this module
-    import test
+    import testing
     ## get location of this module
-    f = absfile(test.__file__)
+    f = absfile(testing.__file__)
     ## extract path
     f = os.path.join( os.path.split( f )[0], '..')
     return absfile( f )
@@ -309,30 +309,6 @@ class FilteredTestSuite( U.TestSuite ):
             U.TestSuite.addTest( self, test )
 
 
-class Flushing_TextTestResult( U._TextTestResult ):
-    """
-    Helper class for (Flushing)TextTestRunner.
-    Customize _TextTestResult so that the reported test id is flushed
-    B{before} the test starts. Otherwise the 'sometest.id ...' is only
-    printed together with the '...ok' after the test has finished.
-    """
-
-    def startTest(self, test):
-        """print id at start of test... and flush it"""
-        super( self.__class__, self ).startTest( test )
-        self.stream.flush()
-
-class FlushingTextTestRunner( U.TextTestRunner ):
-    """
-    Convince TextTestRunner to use the flushing text output rather
-    than the default one.
-    """
-
-    def _makeResult(self):
-        return Flushing_TextTestResult(self.stream, self.descriptions,
-                                     self.verbosity)
-
-
 class AutoTestLoader( object ):
     """
     A replacement for the unittest TestLoaders. It automatically
@@ -487,7 +463,8 @@ class AutoTestLoader( object ):
             testclass.VERBOSITY = self.verbosity
             testclass.TESTLOG = self.log
 
-        runner = FlushingTextTestRunner(self.log, verbosity=self.verbosity)
+        runner = U.TextTestRunner(self.log, verbosity=self.verbosity,
+                                  descriptions=False)
         if not dry:
             self.result = runner.run( self.suite )
 
@@ -742,7 +719,7 @@ if __name__ == '__main__':
 
     o = cmdDict( defaults )
 
-    if len( sys.argv ) == 1 and 'test.py' in sys.argv[0]:
+    if len( sys.argv ) == 1 and 'testing.py' in sys.argv[0]:
         _use( defaults )
         
     _convertOptions( o )
