@@ -66,12 +66,12 @@ class ExampleClass( object ):
 
 ######################
 ### Module testing ###
-import test
+import testing
 
-class Test(test.AutoTest):
+class Test(testing.AutoTest):
     """Test GoodCodeTemplate"""
 
-    TAGS = [ test.LONG ]
+    TAGS = [ testing.LONG ]
 
     def prepare( self ):
         self.e1 = ExampleClass( 'example1' )
@@ -100,4 +100,4 @@ class Test(test.AutoTest):
 
 if __name__ == '__main__':
 
-    test.localTest()
+    testing.localTest()
