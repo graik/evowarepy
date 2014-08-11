@@ -235,7 +235,7 @@ def askForFile(defaultextension='*.csv',
                title=title)
     
     r = tkFileDialog.askopenfilename(**options)
-    return r or default
+    return r
 
 
 ######################
