@@ -44,20 +44,29 @@ class Worklist(object):
     """   
     
     def __init__(self, fname, reportErrors=True):
+        """
+        @param fname - str, file name for output worklist (will be created)
+        @param reportErrors - bool, report certain exceptions via dialog box
+                              to user [True]
+        """
         self.fname = F.absfile(fname)
         self._f = None  ## file handle
         self.reportErrors=reportErrors
         
     def _get_file(self):
         if not self._f:
-            self._f = open(self.fname, mode='w')
+            try:
+                self._f = open(self.fname, mode='w')
+            except:
+                if self.reportErrors: D.lastException()
+                raise
         return self._f
 
-    f = property(_get_file, doc='open file handle')
+    f = property(_get_file, doc='open file handle for writing')
     
     def close(self):
         """
-        Close file handle. This method should be called automatically by 
+        Close file handle. This method will be called automatically by 
         __del__ or the with statement.
         """
         if self._f:
