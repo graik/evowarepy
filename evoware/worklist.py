@@ -123,9 +123,63 @@ class Worklist(object):
         self.aspirate(rackLabel=rackLabel, position=position, volume=volume)
 
     
-    def dispense(self, wash=True):
-        pass
+    def dispense(self, rackLabel='', rackID='', rackType='', 
+                 position=1, tubeID='', volume=0,
+                 liquidClass='', tipMask=None, wash=True):
+        """
+        Generate a single dispense command. Required parameters are:
+        @param rackLabel or rackID - str, source rack label or barcode ID
+        @param position - int, well position (default:1)
+        @param volume - int, volume in ul
+        
+        Optional parameters are:
+        @param rackType - str, validate that rack has this type
+        @param tubeID - str, tube bar code
+        @param liquidClass - str, alternative liquid class
+        @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
+        
+        Tip-handling:
+        @param wash - bool, include 'W' statement for tip replacement after
+                      dispense (default: True)
+        """
+        if not rackLabel or rackID:
+            raise WorklistException, 'Specify either destination rack label or ID.'
+        
+        tipMask = str(tipMask or '')
+        
+        r = 'D %s;%s;%s;%i;%s;%i;%s;%s\n' % (rackLabel, rackID, rackType, position,
+                                    tubeID, volume, liquidClass, tipMask)
+        
+        self.f.write(r)
+        
+        if wash:
+            self.f.write('W;\n')
     
+    def D(self, rackLabel, position, volume, wash=True):
+        """
+        dispense shortcut with only the three core parameters
+        @param rackLabel - str, destination rack label (on workbench)
+        @param position - int, destination well position
+        @param volume - int, aspiration volume
+        @param wash - bool, include 'W' statement for tip replacement after
+                      dispense (default: True)
+        """
+        self.dispense(rackLabel=rackLabel, position=position, volume=volume,
+                      wash=wash)
+    
+    def transfer(self, srcLabel, srcPosition, dstLabel, dstPosition, volume,
+                 wash=True):
+        """
+        @param srcLabel - str, source rack label (on workbench)
+        @param srcPosition - int, source well position
+        @param dstLabel - str, destination rack label (on workbench)
+        @param dstPosition - int, destination well position
+        @param volume - int, aspiration volume
+        @param wash - bool, include 'W' statement for tip replacement after
+                      dispense (default: True)
+        """
+        self.A(srcLabel, srcPosition, volume)
+        self.D(dstLabel, dstPosition, volume, wash=wash)
     
 ######################
 ### Module testing ###
@@ -155,10 +209,18 @@ class Test(testing.AutoTest):
 
         self.assertRaises(IOError, inner_call)
     
-    def test_gwl_aspirate( self ):
+    def test_gwl_aspirate_dispense( self ):
         with Worklist(self.fname, reportErrors=False) as wl:
             for i in range(8):
                 wl.aspirate(rackLabel='Src1', position=i+1, volume=25)
+                wl.dispense(rackLabel='dst1', position=i+1, volume=25)
+            
+            for i in range(8):
+                wl.A('src2', i+1, 100)
+                wl.D('dst2', i+1, 100)
+            
+            for i in range(96):
+                wl.transfer('src3', i+1, 'dst3', i+1, 150, wash=False)
     
 
 if __name__ == '__main__':
