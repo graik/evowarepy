@@ -28,7 +28,8 @@ class Worklist(object):
     Preferred usage is to wrap it in a ``with`` statement:
     
     >>> with Worklist('outputfile.gwl') as wl:
-            wl. ... 
+            wl.A('src1', 1, 140)
+            wl.D('dst1', 1, 140)
     
     This will ensure that the file handle is properly opened and closed,
     no matter how the code exits.
@@ -38,9 +39,25 @@ class Worklist(object):
     
     >>> wl = Worklist('outputfile.gwl')
         try:
-            wl. ...
+            wl.A('src1', 1, 140)
+            wl.D('dst1', 1, 140)
         finally:    
             wl.close()
+
+    Worklist methods -- overview:
+    =============================
+    
+    aspirate -- generate a single aspirate line
+    A -- shortcut accepting only labware, well and volume
+    
+    dispense -- generate a single dispense line
+    D -- shortcut accepting only labware, well and volume (plus optional wash)
+    
+    transfer -- generate two lines (plus optional wash/tip change) for
+                aspiration and dispense of the same volume
+    
+    write -- write a custom string to the worklist file
+
     """   
     
     def __init__(self, fname, reportErrors=True):
