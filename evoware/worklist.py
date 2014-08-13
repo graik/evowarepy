@@ -181,6 +181,16 @@ class Worklist(object):
         self.A(srcLabel, srcPosition, volume)
         self.D(dstLabel, dstPosition, volume, wash=wash)
     
+    def write(self, line):
+        """
+        Directly write a custom line to worklist. A line break is added 
+        automatically (i.e. don't add it to the input).
+        """
+        line.replace('\n', '')
+        line.replace('\r', '')
+        
+        self.f.write(line + '\n')
+    
 ######################
 ### Module testing ###
 import testing
@@ -191,7 +201,7 @@ class Test(testing.AutoTest):
     TAGS = [ testing.NORMAL ]
 
     def prepare( self ):
-        self.fname = 'testdata/worklist_tmp.gwl'
+        self.fname = F.test('worklist_tmp.gwl')
     
     def test_createWorklist( self ):
         with Worklist(self.fname) as wl:
