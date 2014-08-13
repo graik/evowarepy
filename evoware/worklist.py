@@ -41,12 +41,12 @@ class Worklist(object):
             wl. ...
         finally:    
             wl.close()
-    """
+    """   
     
-    
-    def __init__(self, fname):
+    def __init__(self, fname, reportErrors=True):
         self.fname = F.absfile(fname)
         self._f = None  ## file handle
+        self.reportErrors=reportErrors
         
     def _get_file(self):
         if not self._f:
@@ -76,16 +76,37 @@ class Worklist(object):
             pass
         
         ## report last Exception to user
-        if type:
+        if type and self.reportErrors:
             D.lastException()
     
+######################
+### Module testing ###
+import testing
+
+class Test(testing.AutoTest):
+    """Test Worklist"""
+
+    TAGS = [ testing.NORMAL ]
+
+    def prepare( self ):
+        self.fname = 'testdata/worklist_tmp.gwl'
+    
+    def test_createWorklist( self ):
+        with Worklist(self.fname) as wl:
+            wl.f.write('test line 1')
+            wl.f.write('test line 2')
+
+        self.assertEqual(wl._f, None)
+
+    def test_worklistFileError( self ):
+        
+        def inner_call():
+            with Worklist('', reportErrors=self.local) as wl:
+                wl.f.write('test line 1')
+                wl.f.write('test line 2')
+
+        self.assertRaises(IOError, inner_call)
 
 if __name__ == '__main__':
-    
-    fname = 'testdata/worklist_tmp.gwl'
-    
-    with Worklist(fname) as wl:
-        wl.f.write('test line 1')
-        wl.f.write('test line 2')
-    
-    print wl._f
+
+    testing.localTest()
