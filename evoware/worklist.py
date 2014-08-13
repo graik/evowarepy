@@ -74,11 +74,11 @@ class Worklist(object):
             self._f = None
     
     def __enter__(self):
-        """Context guard for entering with statement"""
+        """Context guard for entering ``with`` statement"""
         return self
     
     def __exit__(self, type, value, traceback):
-        """Context guard for exiting with statement"""
+        """Context guard for exiting ``with`` statement"""
         try:
             self.close()
         except:
@@ -87,6 +87,45 @@ class Worklist(object):
         ## report last Exception to user
         if type and self.reportErrors:
             D.lastException()
+    
+    def aspirate(self, rackLabel='', rackID='', rackType='', 
+                 position=1, tubeID='', volume=0,
+                 liquidClass='', tipMask=None):
+        """
+        Generate a single aspirate command. Required parameters are:
+        @param rackLabel or rackID - str, source rack label or barcode ID
+        @param position - int, well position (default:1)
+        @param volume - int, volume in ul
+        
+        Optional parameters are:
+        @param rackType - str, validate that rack has this type
+        @param tubeID - str, tube bar code
+        @param liquidClass - str, alternative liquid class
+        @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
+        """
+        if not rackLabel or rackID:
+            raise WorklistException, 'Specify either source rack label or ID.'
+        
+        tipMask = str(tipMask or '')
+        
+        r = 'A %s;%s;%s;%i;%s;%i;%s;%s\n' % (rackLabel, rackID, rackType, position,
+                                    tubeID, volume, liquidClass, tipMask)
+        
+        self.f.write(r)
+    
+    def A(self, rackLabel, position, volume):
+        """
+        aspirate shortcut with only the three core parameters
+        @param rackLabel - str, source rack label (on workbench)
+        @param position - int, source well position
+        @param volume - int, aspiration volume
+        """
+        self.aspirate(rackLabel=rackLabel, position=position, volume=volume)
+
+    
+    def dispense(self, wash=True):
+        pass
+    
     
 ######################
 ### Module testing ###
@@ -115,6 +154,12 @@ class Test(testing.AutoTest):
                 wl.f.write('test line 2')
 
         self.assertRaises(IOError, inner_call)
+    
+    def test_gwl_aspirate( self ):
+        with Worklist(self.fname, reportErrors=False) as wl:
+            for i in range(8):
+                wl.aspirate(rackLabel='Src1', position=i+1, volume=25)
+    
 
 if __name__ == '__main__':
 
