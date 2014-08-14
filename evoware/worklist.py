@@ -32,7 +32,9 @@ class Worklist(object):
             wl.D('dst1', 1, 140)
     
     This will ensure that the file handle is properly opened and closed,
-    no matter how the code exits.
+    no matter how the code exits. If the with block exits through an
+    exception, this exception will be reported to the user in an Error
+    dialog box (can be switched off with Worklist(fname, reportErrors=False)).
     
     Alternatively, create the object in a normal fashion and call the close()
     method yourself:
@@ -43,6 +45,12 @@ class Worklist(object):
             wl.D('dst1', 1, 140)
         finally:    
             wl.close()
+
+    There are two properties:
+    f -- gives access to the writable file handle (readonly property)
+    plateformat -- read or modify the number of wells per plate (default: 96)
+                   this parameter is used to calculate positions and number
+                   of wells in the transferColumn method
 
     Worklist methods -- overview:
     =============================
@@ -56,7 +64,15 @@ class Worklist(object):
     transfer -- generate two lines (plus optional wash/tip change) for
                 aspiration and dispense of the same volume
     
+    transferColumn -- generate an aspirate and a dispense command for each
+                      well in a given column
+    
     write -- write a custom string to the worklist file
+    
+    Worklist examples:
+    ==================
+    
+    Create 
 
     """   
 
