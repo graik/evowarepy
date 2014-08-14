@@ -59,7 +59,18 @@ class Worklist(object):
     write -- write a custom string to the worklist file
 
     """   
+
+    ALLOWED_PLATES = [6, 12, 24, 96, 384, 1536]
+
+    ## map plate format to 
+    PLATE_ROWS = {6 : 2,
+                  12: 3,
+                  24: 4,
+                  96: 8,
+                  384: 16,
+                  1536: 32}
     
+   
     def __init__(self, fname, reportErrors=True):
         """
         @param fname - str, file name for output worklist (will be created)
@@ -69,6 +80,9 @@ class Worklist(object):
         self.fname = F.absfile(fname)
         self._f = None  ## file handle
         self.reportErrors=reportErrors
+        self._plateformat = 96
+        self.rows = 8
+        self.columns = 12
         
     def _get_file(self):
         if not self._f:
@@ -80,6 +94,19 @@ class Worklist(object):
         return self._f
 
     f = property(_get_file, doc='open file handle for writing')
+
+    def _set_plateformat(self, wells=96):
+        if not wells in self.ALLOWED_PLATES:
+            raise WorklistException('plate format %r is not supported' % wells)
+        self._plateformat = wells
+        self.rows = self.PLATE_ROWS[wells]
+        self.columns = wells / self.rows
+        
+    def _get_plateformat(self):
+        return self._plateformat
+
+    plateformat = property( _get_plateformat, _set_plateformat, 
+                            doc='default plate format for column transfers')
     
     def close(self):
         """
@@ -198,6 +225,24 @@ class Worklist(object):
         self.A(srcLabel, srcPosition, volume)
         self.D(dstLabel, dstPosition, volume, wash=wash)
     
+    def transferColumn(self, srcLabel, srcCol, dstLabel, dstCol, 
+                       volume,
+                       liquidClass='', tipMask=None, wash=True):
+        """Generate Aspirate commands for a whole plate column"""
+        pos_src = (srcCol - 1) * self.rows
+        pos_dst = (dstCol - 1) * self.rows
+        
+        for i in range(0, self.rows):
+            self.aspirate(rackLabel=srcLabel, 
+                          position=pos_src + i, 
+                          volume=volume, 
+                          liquidClass=liquidClass, tipMask=tipMask)
+            self.dispense(rackLabel=dstLabel, 
+                          position=pos_dst + i,
+                          volume=volume,
+                          liquidClass=liquidClass, tipMask=tipMask, 
+                          wash=wash)
+    
     def write(self, line):
         """
         Directly write a custom line to worklist. A line break is added 
@@ -218,7 +263,7 @@ class Test(testing.AutoTest):
     TAGS = [ testing.NORMAL ]
 
     def prepare( self ):
-        self.fname = F.test('worklist_tmp.gwl')
+        self.fname = F.testRoot('worklist_tmp.gwl')
     
     def test_createWorklist( self ):
         with Worklist(self.fname) as wl:
@@ -248,6 +293,11 @@ class Test(testing.AutoTest):
             
             for i in range(96):
                 wl.transfer('src3', i+1, 'dst3', i+1, 150, wash=False)
+    
+    def test_gwl_transfers(self):
+        with Worklist(self.fname, reportErrors=False) as wl:
+            wl.transferColumn('src3', 2, 'dst3', 4, 120, wash=True)
+        
     
 
 if __name__ == '__main__':

@@ -81,7 +81,7 @@ def testRoot( subfolder='' ):
     @param subfolder: str; sub-folder within testroot
     @return: str; folder containing testdata
     """
-    return absfile( osp.join( projectRoot(), '..', 'testdata', subfolder ) )
+    return absfile( osp.join( projectRoot(), 'evoware', 'testdata', subfolder ) )
 
 
 def stripFilename( filename ):
