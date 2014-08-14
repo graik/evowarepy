@@ -56,16 +56,20 @@ class Worklist(object):
     =============================
     
     aspirate -- generate a single aspirate line
-    A -- shortcut accepting only labware, well and volume as parameters
+    A -- shortcut expecting only labware, well and volume as parameters
     
     dispense -- generate a single dispense line
-    D -- shortcut accepting only labware, well and volume (plus optional wash)
+    D -- shortcut expecting only labware, well and volume (plus optional wash)
     
     transfer -- generate two lines (plus optional wash/tip change) for
                 aspiration and dispense of the same volume
     
     transferColumn -- generate an aspirate and a dispense command for each
                       well in a given column
+    
+    wash -- insert wash / tip replacement statement
+    flush -- insert flush statement
+    B -- insert break statement (B)
     
     write -- write a custom string to the worklist file
     
@@ -272,6 +276,18 @@ class Worklist(object):
                           liquidClass=liquidClass, tipMask=tipMask, 
                           wash=wash)
         return i
+    
+    def wash(self):
+        """generate 'W;' wash / tip replacement command"""
+        self.f.write('W;\n')
+    
+    def flush(self):
+        """generate 'F;' tip flushing command"""
+        self.f.write('F;\n')
+        
+    def B(self):
+        """Generate break command forcing execution of all previous lines"""
+        self.f.write('B;\n')
     
     def write(self, line):
         """
