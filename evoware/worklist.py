@@ -244,7 +244,20 @@ class Worklist(object):
     def transferColumn(self, srcLabel, srcCol, dstLabel, dstCol, 
                        volume,
                        liquidClass='', tipMask=None, wash=True):
-        """Generate Aspirate commands for a whole plate column"""
+        """
+        Generate Aspirate commands for a whole plate column
+        @param srcLabel - str, source rack label (on workbench)
+        @param srcCol - int, column on source plate
+        @param dstLabel - str, destination rack label (on workbench)
+        @param dstCol - int, column on destination plate
+        @param volume - int, aspiration / dispense volume
+        @param liquidClass - str, alternative liquid class
+        @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
+        @param wash - bool, include 'W' statement for tip replacement after
+                      dispense (default: True)
+        
+        @return n - int, number of aspiration / dispense pairs written
+        """
         pos_src = (srcCol - 1) * self.rows + 1
         pos_dst = (dstCol - 1) * self.rows + 1
         
@@ -258,6 +271,7 @@ class Worklist(object):
                           volume=volume,
                           liquidClass=liquidClass, tipMask=tipMask, 
                           wash=wash)
+        return i
     
     def write(self, line):
         """
