@@ -48,7 +48,7 @@ class Worklist(object):
     =============================
     
     aspirate -- generate a single aspirate line
-    A -- shortcut accepting only labware, well and volume
+    A -- shortcut accepting only labware, well and volume as parameters
     
     dispense -- generate a single dispense line
     D -- shortcut accepting only labware, well and volume (plus optional wash)
@@ -229,8 +229,8 @@ class Worklist(object):
                        volume,
                        liquidClass='', tipMask=None, wash=True):
         """Generate Aspirate commands for a whole plate column"""
-        pos_src = (srcCol - 1) * self.rows
-        pos_dst = (dstCol - 1) * self.rows
+        pos_src = (srcCol - 1) * self.rows + 1
+        pos_dst = (dstCol - 1) * self.rows + 1
         
         for i in range(0, self.rows):
             self.aspirate(rackLabel=srcLabel, 
@@ -296,7 +296,7 @@ class Test(testing.AutoTest):
     
     def test_gwl_transfers(self):
         with Worklist(self.fname, reportErrors=False) as wl:
-            wl.transferColumn('src3', 2, 'dst3', 4, 120, wash=True)
+            wl.transferColumn('src3', 2, 'dst3', 12, 120, wash=True)
         
     
 
