@@ -228,7 +228,7 @@ class Worklist(object):
         
         tipMask = str(tipMask or '')
         
-        r = 'A %s;%s;%s;%i;%s;%i;%s;%s\n' % (rackLabel, rackID, rackType, position,
+        r = 'A %s;%s;%s;%i;%s;%i;%s;%s;\n' % (rackLabel, rackID, rackType, position,
                                     tubeID, volume, liquidClass, tipMask)
         
         self.f.write(r)
@@ -267,7 +267,7 @@ class Worklist(object):
         
         tipMask = str(tipMask or '')
         
-        r = 'D %s;%s;%s;%i;%s;%i;%s;%s\n' % (rackLabel, rackID, rackType, position,
+        r = 'D %s;%s;%s;%i;%s;%i;%s;%s;\n' % (rackLabel, rackID, rackType, position,
                                     tubeID, volume, liquidClass, tipMask)
         
         self.f.write(r)
@@ -329,11 +329,11 @@ class Worklist(object):
         r+= '%s;%s;%s;%i;%i;' % (dstRackLabel, dstRackID, dstRackType, 
                                  dstPosStart, dstPosEnd)
         
-        r+= '%i;%s;%i;%i;%i' % (volume, liquidClass, nDitiReuses, nMultiDisp,
+        r+= '%i;%s;%i;%i;%i;' % (volume, liquidClass, nDitiReuses, nMultiDisp,
                                 direction)
         
         if excludeWells:
-            r += ';' + ';'.join([str(x) for x in excludeWells])
+            r += ';'.join([str(x) for x in excludeWells])
         
         r+= '\n'
         
