@@ -228,7 +228,7 @@ class Worklist(object):
         
         tipMask = str(tipMask or '')
         
-        r = 'A %s;%s;%s;%i;%s;%i;%s;%s;\n' % (rackLabel, rackID, rackType, position,
+        r = 'A;%s;%s;%s;%i;%s;%i;%s;%s;\n' % (rackLabel, rackID, rackType, position,
                                     tubeID, volume, liquidClass, tipMask)
         
         self.f.write(r)
@@ -267,7 +267,7 @@ class Worklist(object):
         
         tipMask = str(tipMask or '')
         
-        r = 'D %s;%s;%s;%i;%s;%i;%s;%s;\n' % (rackLabel, rackID, rackType, position,
+        r = 'D;%s;%s;%s;%i;%s;%i;%s;%s;\n' % (rackLabel, rackID, rackType, position,
                                     tubeID, volume, liquidClass, tipMask)
         
         self.f.write(r)
