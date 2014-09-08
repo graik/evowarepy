@@ -387,6 +387,49 @@ class Worklist(object):
                           wash=wash)
         return i
     
+    
+    def multidiswithflush(self, srcLabel='', srcPos=1, dstLabel='', dstPos=[], volume=0, tipVolume=900, liquidClass='', tipMask=None, wash=True, flush=True):
+        """
+        @param wash - bool, replace tip *after* all multi-dispense actions.
+
+        """
+        n_dispense = len(dstPos)
+        totalVolume = volume * n_dispense
+        tipVolume = tipVolume - tipVolume % volume  # reduce tip volume to nearest multiple of dispense volume
+        
+        dstPos.reverse() # first entry is last now
+        
+        while totalVolume > 0:
+            aspVolume = totalVolume if totalVolume <= tipVolume else tipVolume
+        
+            self.aspirate(rackLabel=srcLabel, 
+                            position=srcPos, 
+                            volume=aspVolume, 
+                            liquidClass=liquidClass, tipMask=tipMask)
+            
+            n_next_dispense = int(aspVolume / volume)
+            
+            assert n_next_dispense <= len(dstPos), 'missmatch between aspiration volume and dispense actions left'
+            
+            for i in range(0, n_next_dispense):
+                
+                well = dstPos.pop()
+                
+                self.dispense(rackLabel=dstLabel, 
+                              position=well,
+                              volume=volume,
+                              liquidClass=liquidClass, tipMask=tipMask, 
+                              wash=False)
+                
+            totalVolume = totalVolume - aspVolume
+            
+            if totalVolume > 0 and flush:
+                self.flush()
+            
+        if wash:
+            self.wash()
+    
+    
     def wash(self):
         """generate 'W;' wash / tip replacement command"""
         self.f.write('W;\n')
