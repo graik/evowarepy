@@ -160,6 +160,9 @@ class Worklist(object):
         self.rows = 8
         self.columns = 12
         
+    def __str__(self):
+        return 'Worklist object writing to %s' % self.fname
+        
     def _get_file(self):
         if not self._f:
             try:
