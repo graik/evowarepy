@@ -30,6 +30,7 @@ class BaseParser(object):
 
     def __init__(self):
         self._params = {}
+        self._index = {}
 
     def parseParam(self, values):
         """
@@ -74,10 +75,6 @@ class BaseParser(object):
             d[key] = self.clean2str(value)
 
 
-    def addEntry(self, d):
-        """Commit cleaned-up entry dictionary to index (abstract)"""
-        pass
-    
     def parseHeader(self, values):
         """
         @param values: [any], list of row values from input parser
@@ -90,6 +87,20 @@ class BaseParser(object):
         
         return r
         
+    def convertId(self, ids):
+        """
+        Normalize input ID or ID + sub-ID tuple into single lower case string.
+        @param ids: float or int or str or unicode or [float|int|str|unicode]
+        @return unicode, 'ID#subID' or 'ID'
+        """
+        if not type(ids) in [list, tuple]:
+            ids = [ids]
+        
+        ids = [unicode(self.intfloat2int(x)).lower().strip() for x in ids]
+        ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
+        if len(ids) > 1:
+            return '#'.join(ids)
+        return ids[0]
     
     def readExcel(self, fname):
         """
@@ -126,6 +137,22 @@ class BaseParser(object):
         
         return i
 
+    def addEntry(self, d):
+        """
+        Add new entry to index.
+        @param d: dict, {'id':str|int, 'sub-id':str|int, ... }
+        """
+        part_id = self.convertId( (d['id'], d.get('sub-id', '')) )
+        self._index[ part_id ] = d
+    
+    def __getitem__(self, item):
+        """
+        PartIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
+        @raise KeyError, if given ID doesn't match any registered part
+        """
+        id = self.convertId(item)
+        return self._index[id]
+    
 
 class PartIndex(BaseParser):
     """Parse part index Excel table(s)"""
@@ -133,8 +160,6 @@ class PartIndex(BaseParser):
     def __init__(self):
         super(PartIndex, self).__init__()
         
-        self._index = {}
-
         self._bc2plate = {}
         self._plate2bc = {}
         
@@ -145,18 +170,11 @@ class PartIndex(BaseParser):
         @param d: dict, {'id':str|int, 'sub-id':str|int, plate':str|int, 
                          'position':str|int, 'barcode':str|int }
         """
-        part_id = d['id']
-        if d['sub-id']:
-            part_id += '#' + d['sub-id']
-
-        part_id = part_id.lower()
+        part_id = self.convertId((d['id'], d['sub-id']))
 
         if not part_id in self._index:
             self._index[part_id] = []
 
-        del d['id']
-        del d['sub-id']
-        
         if d['barcode'] and d['plate']:
             self._bc2plate[d['barcode']] = d['plate']
             self._plate2bc[d['plate']] = d['barcode']
@@ -164,22 +182,13 @@ class PartIndex(BaseParser):
         self._index[ part_id ] += [ d ]
 
     
-    def __getitem__(self, item):
+    def __getitem__(self, id):
         """
         PartIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
         @raise KeyError, if given ID doesn't match any registered part
         """
-        if type(item) is tuple:
-            item = [ unicode(x).strip() for x in item ]
-            
-            if item[1]:
-                item = '#'.join(item)  ## join ID and sub-ID
-            else:
-                item = item[0]  ## but ignore empty sub-ID argument
-        
-        item = unicode(item).lower().strip()
-        
-        return self._index[item]
+        id = self.convertId(id)
+        return self._index[id]
     
     def getPosition(self, id, subid='', plate=None, default=None):
         """
@@ -190,13 +199,12 @@ class PartIndex(BaseParser):
         @default: optional default return value
         @return: (str,str), tuple of (plateID, position)
         """
+        id = self.convertId((id, subid))
+        
+        if not id in self._index:
+            return default
 
-        try:
-            r = self[id, subid]
-        except KeyError:
-            if default:
-                return default
-            raise
+        r = self[id]
 
         if plate:
             if not type(plate) in [list, tuple]:
@@ -255,42 +263,6 @@ class TargetIndex(BaseParser):
         
         self._index = collections.OrderedDict()  ## replace unordered dict
     
-    def convertId(self, ids):
-        """
-        Normalize input ID or ID / sub-ID tuple into single lower case string.
-        @param ids: int or str or unicode or [int, str, unicode]
-        @return unicode, ID#subID
-        """
-        if not type(ids) in [list, tuple]:
-            ids = [ids]
-        
-        ids = [unicode(self.intfloat2int(x)).lower().strip() for x in ids]
-        ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
-        if len(ids) > 1:
-            return '#'.join(ids)
-        return ids[0]
-    
-    def addEntry(self, d):
-        """
-        Add new entry to part index.
-        @param d: dict, {'id':str|int, 'sub-id':str|int, plate':str|int, 
-                         'position':str|int, 'barcode':str|int }
-        """
-        part_id = self.convertId( (d['id'], d.get('sub-id', '')) )
-
-        del d['id']
-        del d['sub-id']
-        
-        self._index[ part_id ] = d
-    
-    def __getitem__(self, item):
-        """
-        PartIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
-        @raise KeyError, if given ID doesn't match any registered part
-        """
-        id = self.convertId(item)
-        
-        return self._index[id]
     
 
     def __len__(self):
