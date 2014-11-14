@@ -153,6 +153,19 @@ class BaseParser(object):
         id = self.convertId(item)
         return self._index[id]
     
+    def __len__(self):
+        """len(PickList) -> int, number of samples to pick"""
+        return len(self._index)
+    
+    def keys(self):
+        return self._index.keys()
+    
+    def values(self):
+        return self._index.values()
+    
+    def items(self):
+        return self._index.items()
+
 
 class PartIndex(BaseParser):
     """Parse part index Excel table(s)"""
@@ -181,14 +194,6 @@ class PartIndex(BaseParser):
 
         self._index[ part_id ] += [ d ]
 
-    
-    def __getitem__(self, id):
-        """
-        PartIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
-        @raise KeyError, if given ID doesn't match any registered part
-        """
-        id = self.convertId(id)
-        return self._index[id]
     
     def getPosition(self, id, subid='', plate=None, default=None):
         """
@@ -227,15 +232,6 @@ class PartIndex(BaseParser):
         """len(partindex) -> int, number of registered positions"""
         return sum( [ len(i) for i in self._index.values() ] )
     
-    def keys(self):
-        return self._index.keys()
-    
-    def values(self):
-        return self._index.values()
-    
-    def items(self):
-        return self._index.items()
-
     def filterByPlate(self, plateID):
         """
         @return PartIndex, sub-index of all partIDs assigned to given plate
@@ -262,13 +258,7 @@ class TargetIndex(BaseParser):
         super(TargetIndex, self).__init__()
         
         self._index = collections.OrderedDict()  ## replace unordered dict
-    
-    
 
-    def __len__(self):
-        """len(PickList) -> int, number of samples to pick"""
-        return len(self._index)
-    
     def __iter__(self):
         """
         for x in PickList: -> 
