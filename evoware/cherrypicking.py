@@ -25,8 +25,61 @@ import worklist as W
 class IndexFileError( Exception ):
     pass
 
-class BaseParser(object):
-    """Common base for Table (Excel) parsing"""
+class BaseIndex(object):
+    """
+    Common base for Table (Excel) parsing.
+    
+    Assumes the following columns:
+    * ID ... primary ID of construct
+    * sub-ID ... optional secondary ID, e.g. for clone
+    * plate ... plate ID (str or int)
+    * pos ... position (str or int)
+    * at least one additional column (number of columns used to identify header line)
+    
+    Empty columns (spacers without header name) are currently *not* supported.
+    Rows without value in the first column are silently ignored. 
+    
+    ID + sub-ID (if any) are combined into a 'ID#sub-ID' index key for 
+    the entry. If there is no sub-ID given, the ID is the key. ID and sub-ID
+    are stripped and lower-cased internally so that upper and lower case
+    versions are equally valid. 
+    
+    The content of each row is parsed into a dictionary {column-title:value,}
+    which is then mapped to the index key (ID or ID#subID).
+    
+    The complete dictionary of each row can be accessed in two ways:
+    
+    >>> parser['BBa0010', 'a']
+    {'plate':'sb01', 'position':'A2', 'id':'BBa0010', 'sub-id':'a'}
+    
+    or
+    >>> parser['BBa0010#a']
+    {'plate':'sb01', 'position':'A2', 'id':'BBa0010', 'sub-id':'a'}
+
+    The original ID and sub-ID (not lower-cased) are available in this dict.
+
+    or plate and position of a given entry can be accessed directly:
+    >>> parser.position('BBa0010', 'a')
+    ('sb10', 'A2')
+    >>> parser.position('bba0010#a')
+    ('sb10', 'A2')
+        
+    This base implementation assumes that every ID+sub-ID is assigned to
+    exactly one plate and position.
+    
+    Additionally, the parser recognizes the keyword 'param' in the first
+    column of any row *before* the table header and interprets the next two
+    columns as a parameter : value pair which is put into self._params.
+    For example, the table row:
+    param    volume    130    ul
+    ... is converted into 
+    >>> parser._params['volume'] = 130
+    """
+    
+    #: identify header row if first column has this value 
+    HEADER_FIRST_VALUE = 'ID'
+
+    _header0 = HEADER_FIRST_VALUE.lower()
 
     def __init__(self):
         self._params = {}
@@ -102,6 +155,11 @@ class BaseParser(object):
             return '#'.join(ids)
         return ids[0]
     
+    def detectHeader(self, values):
+        if values and unicode(values[0]).lower().strip() == self._header0:
+            return True
+        return False
+    
     def readExcel(self, fname):
         """
         @param fname: str, excel file name including path
@@ -111,31 +169,36 @@ class BaseParser(object):
         book = X.open_workbook( F.absfile(fname) )
         sheet = book.sheets()[0]
         
-        row = 0
-        values = []
-        ## iterate until there is a row with at least 5 non-empty values
-        ## capture any "param, <key>, <value>" entries until then
-        while len(values) < 5:
-            values = [ v for v in sheet.row_values(row) if v ] 
-            r = self.parseParam(values)
-            self._params.update(r)
-            row += 1
-        
-        ## parse table "header"
-        keys = self.parseHeader(values)
-        
-        i = 0
-        for row in range(row, sheet.nrows):
-            values = sheet.row_values(row) 
+        try:
+            row = 0
+            values = []
+            ## iterate until there is a row with at least 5 non-empty values
+            ## capture any "param, <key>, <value>" entries until then
+            while not self.detectHeader(values):
+                values = [ v for v in sheet.row_values(row) if v ] 
+                r = self.parseParam(values)
+                self._params.update(r)
+                row += 1
+            
+            ## parse table "header"
+            keys = self.parseHeader(values)
+            
+            i = 0
+            for row in range(row, sheet.nrows):
+                values = sheet.row_values(row) 
+    
+                ## ignore rows with empty first column
+                if values[0]:
+                    d = dict( zip( keys, values ) ) 
+                    self.cleanEntry(d)
+                    self.addEntry(d)
+                    i += 1
 
-            ## ignore rows with empty first column
-            if values[0]:
-                d = dict( zip( keys, values ) ) 
-                self.cleanEntry(d)
-                self.addEntry(d)
-                i += 1
-        
-        return i
+            return i
+
+        except IndexError, why:
+            raise IndexError, 'Invalid Index file (could not find header).'
+    
 
     def addEntry(self, d):
         """
@@ -166,17 +229,38 @@ class BaseParser(object):
     def items(self):
         return self._index.items()
 
+    def position(self, id, subid='', default=None):
+        """
+        Return plate and position of (arbitrary) first match to given 
+        ID, and, if given, plate.
+        @param id [, subid]: str, ID and optional sub-ID
+        @default: optional default return value
+        @return: (str,str), tuple of (plateID, position)
+        """
+        id = self.convertId((id, subid))
+        
+        if default is not None and not id in self._index:
+            return default
 
-class PartIndex(BaseParser):
-    """Parse part index Excel table(s)"""
+        r = self[id]
+        return r['plate'], r['pos']
+
+
+class PartIndex(BaseIndex):
+    """
+    Parse and access a table that maps part-IDs to source locations.
     
-    def __init__(self):
-        super(PartIndex, self).__init__()
-        
-        self._bc2plate = {}
-        self._plate2bc = {}
-        
-     
+    PartIndex extends the BaseIndex class by allowing multiple locations
+    per part. The low level return value of the index thus always is a list
+    of dictionaries rather than a single dictionary.
+    
+    The position() method can be restricted to only match positions in a 
+    given plate and will return the first position found (if any).
+    
+    The filterByPlate() method returns a new PartIndex containing only 
+    entries from a given plate.
+    """
+    
     def addEntry(self, d):
         """
         Add new entry to part index.
@@ -188,14 +272,14 @@ class PartIndex(BaseParser):
         if not part_id in self._index:
             self._index[part_id] = []
 
-        if d['barcode'] and d['plate']:
-            self._bc2plate[d['barcode']] = d['plate']
-            self._plate2bc[d['plate']] = d['barcode']
-
         self._index[ part_id ] += [ d ]
 
     
-    def getPosition(self, id, subid='', plate=None, default=None):
+    def __len__(self):
+        """len(partindex) -> int, number of registered positions"""
+        return sum( [ len(i) for i in self._index.values() ] )
+    
+    def position(self, id, subid='', plate=None, default=None):
         """
         Return plate and position of (arbitrary) first match to given 
         ID, and, if given, plate.
@@ -206,7 +290,7 @@ class PartIndex(BaseParser):
         """
         id = self.convertId((id, subid))
         
-        if not id in self._index:
+        if default is not None and not id in self._index:
             return default
 
         r = self[id]
@@ -228,15 +312,11 @@ class PartIndex(BaseParser):
         
         return r[0]['plate'], r[0]['pos']
     
-    def __len__(self):
-        """len(partindex) -> int, number of registered positions"""
-        return sum( [ len(i) for i in self._index.values() ] )
-    
     def filterByPlate(self, plateID):
         """
         @return PartIndex, sub-index of all partIDs assigned to given plate
         """
-        plateID = unicode(plateID).lower().strip()
+        plateID = self.clean2str(plateID)
         
         r = {}
         for key, entries in self._index.items():
@@ -251,37 +331,88 @@ class PartIndex(BaseParser):
         return p
     
     
-class TargetIndex(BaseParser):
-    """Parse cherry picking table(s)"""
-    
-    def __init__(self):
-        super(TargetIndex, self).__init__()
+class TargetIndex(BaseIndex):
+    """
+    Index extension for a target table mapping constructs with a certain
+    ID to a target position.
+
+    Assumes the following columns:
+
+    * ID ... target ID of new well/reaction
+    * sub-ID ... optional secondary ID (ID#sub-ID must be unique in table)
+    * plate ... target plate ID (str or int)
+    * pos ... target position (str or int) within target plate
+
+    * one or more "source" columns holding IDs of source constructs that
+      should be pipetted into target. Default column title is "source", can
+      be adapted in __init__
+    """
+
+    def __init__(self, sources=['source'] ):
+        """
         
+        @param sources: [str] | [(str,str),str], list of column headers
+        """
+        super(TargetIndex, self).__init__()  
         self._index = collections.OrderedDict()  ## replace unordered dict
+        
+        self.source_cols = self._clean_headers(sources)
 
-    def __iter__(self):
-        """
-        for x in PickList: -> 
-           {'id':str, 
-            'dstplate':str, 'dstpos':int}
-        """
-        pass
+    def _clean_headers(self, values):
+        r = []
+        for v in values:
+            if type(v) in [list, tuple]:
+                r += [ self._clean_headers(v) ]
+            else:
+                r += [ unicode(v).lower().strip() ]
+        return r
+    
+    
+    
+    
+######################
+### Module testing ###
+import testing
 
-class Picker(object):
-    """Convert input part index and cherry picking table into worklist"""
+class Test(testing.AutoTest):
+    """Test PlateFormat"""
+
+    TAGS = [ testing.NORMAL ]
+
+    def prepare(self):
+        fname = F.testRoot('partslist.xls')
+        self.p = PartIndex()
+        self.p.readExcel(fname)
+        
+    def test_partIndex(self):
+        self.assertEqual(self.p['sb0101',2], self.p['sb0101#2'])
+        self.assertEqual(len(self.p['sb0111']), 2)
+        
+        self.assertEqual(len(self.p), 27)
+
+        self.assertEqual(self.p.position('sb0102', '2'), (u'SB10', u'A5'))
+        
+        self.assertEqual(self.p.position('sb0102#2', plate='SB10'), 
+                         self.p.position('sb0102', '2'))
+        
+
+    def test_targetIndex_simple(self):
+        fname = F.testRoot('targetlist.xls')
+        t = TargetIndex(sourceColumns=[('construct','clone')])
+        t.readExcel(fname)
     
-    def __init__(self, findex, fpicking, fout):
-        self.parts = PartIndex(*findex)
-        self.f_picking = fpicking
-        self.f_out = fout
-    
-    
+    def test_targetIndex_multiple(self):
+        fname = F.testRoot('targetlist_PCR.xls')
+        t = TargetIndex(sourceColumns=['template','primer1','primer2'])
+        t.readExcel(fname)
+
+
 fname = F.testRoot('partslist.xls')
 self = PartIndex()
 self.readExcel(fname)
 
 fname = F.testRoot('targetlist.xls')
-t = TargetIndex()
+t = TargetIndex(sources=[('construct','clone')])
 t.readExcel(fname)
 
 print "Done"
