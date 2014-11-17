@@ -348,7 +348,7 @@ class TargetIndex(BaseIndex):
       be adapted in __init__
     """
 
-    def __init__(self, sources=['source'] ):
+    def __init__(self, sourceColumns=['source'] ):
         """
         
         @param sources: [str] | [(str,str),str], list of column headers
@@ -356,7 +356,7 @@ class TargetIndex(BaseIndex):
         super(TargetIndex, self).__init__()  
         self._index = collections.OrderedDict()  ## replace unordered dict
         
-        self.source_cols = self._clean_headers(sources)
+        self.source_cols = self._clean_headers(sourceColumns)
 
     def _clean_headers(self, values):
         r = []
@@ -412,7 +412,7 @@ self = PartIndex()
 self.readExcel(fname)
 
 fname = F.testRoot('targetlist.xls')
-t = TargetIndex(sources=[('construct','clone')])
+t = TargetIndex(sourceColumns=[('construct','clone')])
 t.readExcel(fname)
 
 print "Done"
