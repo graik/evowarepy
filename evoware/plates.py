@@ -127,6 +127,10 @@ class PlateFormat(object):
     def __repr__(self):
         return '<%s>' % str(self)
     
+    def __eq__(self, o):
+        return isinstance(o, PlateFormat) and \
+               self.n == o.n and self.nx == o.nx and self.ny == o.ny
+    
 ######################
 ### Module testing ###
 import testing
@@ -168,6 +172,15 @@ class Test(testing.AutoTest):
             pos = f.pos2int(t)
             human = f.int2human(pos)
             self.assertEqual(t, human)
+    
+    def test_plateformat_eq(self):
+        f1 = PlateFormat(96)
+        f2 = PlateFormat(96)
+        f3 = PlateFormat(96, nx=1, ny=96)
+        
+        self.assertTrue(f1 == f2)
+        self.assertFalse(f2 == f3)
+        self.assertEqual(f1,f2)
         
 
 if __name__ == '__main__':

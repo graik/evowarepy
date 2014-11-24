@@ -431,7 +431,7 @@ class Test(testing.AutoTest):
         self.assertEqual(self.p.position('sb0102#2', plate='SB10'), 
                          self.p.position('sb0102', '2'))
         
-        self.assertEqual(self.p._plates['SB11'].n, 384)
+        self.assertEqual(self.p._plates['SB11'], plates.PlateFormat(384))
         
 
     def test_targetIndex_simple(self):
