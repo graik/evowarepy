@@ -155,6 +155,12 @@ class BaseIndex(object):
         for key, value in d.items():
             d[key] = self.clean2str(value)
 
+    def parsePreHeader(self, values):
+        r = self.parseParam(values)
+        self._params.update(r)
+        
+        r = self.parsePlateformat(values)
+        self._plates.update(r)
 
     def parseHeader(self, values):
         """
@@ -188,6 +194,7 @@ class BaseIndex(object):
             return True
         return False
     
+
     def readExcel(self, fname):
         """
         @param fname: str, excel file name including path
@@ -204,13 +211,7 @@ class BaseIndex(object):
             ## capture any "param, <key>, <value>" entries until then
             while not self.detectHeader(values):
                 values = [ v for v in sheet.row_values(row) if v ] 
-
-                r = self.parseParam(values)
-                self._params.update(r)
-                
-                r = self.parsePlateformat(values)
-                self._plates.update(r)
-                
+                self.parsePreHeader(values)
                 row += 1
             
             ## parse table "header"
@@ -379,9 +380,16 @@ class TargetIndex(BaseIndex):
     * one or more "source" columns holding IDs of source constructs that
       should be pipetted into target. Default column title is "source", can
       be adapted in __init__
+      
+    Assumes volume definition for each source before the table header:
+        volume    <source column>  <volume>
+    Example:
+        volume    template    5
+    Declares that 5 ul should be transferred from sources given in column 
+    "template".
     """
 
-    def __init__(self, sourceColumns=['source'] ):
+    def __init__(self, sourceColumns=['source'], volume=None ):
         """
         
         @param sources: [str] | [(str,str),str], list of column headers
@@ -390,6 +398,7 @@ class TargetIndex(BaseIndex):
         self._index = collections.OrderedDict()  ## replace unordered dict
         
         self.source_cols = self._clean_headers(sourceColumns)
+        self._volume = {'default':volume}
 
     def _clean_headers(self, values):
         r = []
@@ -400,9 +409,21 @@ class TargetIndex(BaseIndex):
                 r += [ unicode(v).lower().strip() ]
         return r
     
+    def parsePreHeader(self, values):
+        super(TargetIndex,self).parsePreHeader(values)
+        
+        r = self.parseParam(values, keyword='volume')
+        if r and not r.keys()[0] in self.source_cols + ['default']:
+            raise IndexFileError, \
+                  'volume definition "%s" does not match any source column' %\
+                  r.keys()[0]
+
+        self._volume.update(r)
+    
+    
 class CherryWorklist(object):
     
-    def __init__(self, targetIndex, sourceIndex, ):
+    def __init__(self, targetIndex, sourceIndex ):
         pass
     
     
@@ -432,7 +453,6 @@ class Test(testing.AutoTest):
                          self.p.position('sb0102', '2'))
         
         self.assertEqual(self.p._plates['SB11'], plates.PlateFormat(384))
-        
 
     def test_targetIndex_simple(self):
         fname = F.testRoot('targetlist.xls')
@@ -443,6 +463,10 @@ class Test(testing.AutoTest):
         fname = F.testRoot('targetlist_PCR.xls')
         t = TargetIndex(sourceColumns=['template','primer1','primer2'])
         t.readExcel(fname)
+        
+        self.assertTrue(t._volume['template'] == 2)
+        self.assertEqual(t._volume['primer1'], 5)
+        self.assertEqual(t._volume['primer2'], 5)
 
 
 fname = F.testRoot('partslist.xls')

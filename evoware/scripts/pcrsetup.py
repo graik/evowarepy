@@ -26,7 +26,8 @@ pcrsetup.py -- Generate PCR setup worklist from part index and cherry picking
 
 Syntax:
     pcrsetup.py -i <reactions.xls> -src <templates.xls> <primers.xls>
-                [-useRack ]
+                -o <output.worklist>
+                [-useRack -srcplate <plate ID> <plate ID>]
 
 Options:
     -i        input excel file listing which source samples should be pipetted
@@ -35,6 +36,8 @@ Options:
               in source plates
     -useRack  interpret plate IDs in tables as Evo RackLabel (Labware label)
               otherwise, plate IDs are interpreted as $Labware.ID$
+    -srcplate only generate worklist for transfers that can be realized with
+              with given source plate(s) (identified by their ID)
 
 Default options:
 """
@@ -49,7 +52,10 @@ def _defaultOptions():
 def cleanOptions( options ):
     options['i'] = F.absfile(options['i'])
     options['src'] = [ F.absfile(f) for f in U.tolist(options['src']) ]
+    options['o'] = F.absfile(options['o'])
+    
     options['useRack'] = 'useRack' in options
+    options['srcplate'] = [s.strip() for s in U.tolist(options.get('srcplate',[]))]
     return options
 
 ###########################
@@ -65,5 +71,12 @@ try:
     options = cleanOptions(options) 
 except KeyError:
     _use(options)
+
+parts = P.PartIndex()
+for f in options['src']:
+    parts.readExcel(f)
+
+targets = P.TargetIndex(sourceColumns=['template', 'primer1', 'primer2'])
+targets.readExcel(options['i'])
 
 
