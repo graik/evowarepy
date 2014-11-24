@@ -21,6 +21,7 @@ import xlrd as X  ## dependency
 
 import fileutil as F
 import worklist as W
+import plates
 
 class IndexFileError( Exception ):
     pass
@@ -67,11 +68,23 @@ class BaseIndex(object):
     This base implementation assumes that every ID+sub-ID is assigned to
     exactly one plate and position.
     
-    Additionally, the parser recognizes the keyword 'param' in the first
-    column of any row *before* the table header and interprets the next two
-    columns as a parameter : value pair which is put into self._params.
-    For example, the table row:
-    param    volume    130    ul
+    Additionally, the parser recognizes two different keywords in the first
+    column of any row *before* the table header -- 'plate' and 'param':
+    
+    * plate  plate_ID  384   -- will assign 'plate_ID' to a 384 well format
+    * plate  XY02      6     -- will assign plate 'XY02' to a 6 well format
+    These values are stored in the BaseIndex._plates dictionary which is mapping
+    plate IDs to plates.PlateFormat instances:
+    >>> parser._plates['plate_ID'] = plates.PlateFormat(384)
+    >>> parser._plates['XY02'] = plates.PlateFormat(6)
+    
+    Default for all plates is PlateFormat(96). This default value can be
+    overridden in the constructor.
+
+    The 'param' keyword signals generic key - value pairs that are put into
+    ._params:
+
+    * param    volume    130    ul
     ... is converted into 
     >>> parser._params['volume'] = 130
     """
@@ -81,11 +94,15 @@ class BaseIndex(object):
 
     _header0 = HEADER_FIRST_VALUE.lower()
 
-    def __init__(self):
+    def __init__(self, plateformat=plates.PlateFormat(96)):
+        """
+        @param plateformat: plates.PlateFormat, default microplate format
+        """
         self._params = {}
         self._index = {}
+        self._plates = {'default':plateformat}
 
-    def parseParam(self, values):
+    def parseParam(self, values, keyword='param'):
         """
         Extract "param, key, value" parameter from one row of values 
         (collected before the actual table header).
@@ -94,7 +111,7 @@ class BaseIndex(object):
         if values:
             v0 = values[0]
     
-            if v0 and type(v0) in (str,unicode) and v0.lower() == 'param':
+            if v0 and type(v0) in (str,unicode) and v0.lower() == keyword:
                 try:
                     key = unicode(values[1]).strip()
                     value = self.intfloat2int(values[2])
@@ -104,7 +121,18 @@ class BaseIndex(object):
                     raise IndexFileError, 'cannot parse parameter: %r' % values
 
         return {}
+    
+    def parsePlateformat(self, values):
+        r = self.parseParam(values, keyword='format')
+        if not r:
+            return r
         
+        plate = r.keys()[0]
+        r[plate] = plates.PlateFormat(r[plate])
+        
+        return r
+        
+
     def intfloat2int(self,x):
         """convert floats like 1.0, 100.0, etc. to int where applicable"""
         if type(x) is float:
@@ -176,8 +204,13 @@ class BaseIndex(object):
             ## capture any "param, <key>, <value>" entries until then
             while not self.detectHeader(values):
                 values = [ v for v in sheet.row_values(row) if v ] 
+
                 r = self.parseParam(values)
                 self._params.update(r)
+                
+                r = self.parsePlateformat(values)
+                self._plates.update(r)
+                
                 row += 1
             
             ## parse table "header"
@@ -367,7 +400,10 @@ class TargetIndex(BaseIndex):
                 r += [ unicode(v).lower().strip() ]
         return r
     
+class CherryWorklist(object):
     
+    def __init__(self, targetIndex, sourceIndex, ):
+        pass
     
     
 ######################
@@ -394,6 +430,8 @@ class Test(testing.AutoTest):
         
         self.assertEqual(self.p.position('sb0102#2', plate='SB10'), 
                          self.p.position('sb0102', '2'))
+        
+        self.assertEqual(self.p._plates['SB11'].n, 384)
         
 
     def test_targetIndex_simple(self):

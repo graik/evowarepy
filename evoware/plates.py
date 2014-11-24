@@ -46,10 +46,11 @@ class PlateFormat(object):
     
     def __init__(self, n, nx=None, ny=None):
         """
-        Define Plate format. Number of columns (nx) and rows (ny) is deduced 
-        from well number (n). This gives the expected dimensions for plates 
-        with 1, 2, 6, 12, 24, 48, 96, 384 and 1536 wells. For any format more
-        odd than this, nx and ny should be given explicitely.
+        Define Plate format. Number of columns (nx) and rows (ny) is deduced
+        from well number (n), assuming a 3 : 2 ratio of columns : rows. This
+        gives the expected dimensions for plates with 1, 2, 6, 12, 24, 48,
+        96, 384 and 1536 wells. For any format more odd than this, nx and ny
+        should be given explicitely.
         
         @param n: int, number of wells (e.g. 96)
         @param nx: int, optionally, number of columns (else calculated from n)
@@ -119,6 +120,12 @@ class PlateFormat(object):
         
         r = string.ascii_uppercase[row] + str(col+1)
         return r
+    
+    def __str__(self):
+        return '%i well PlateFormat' % self.n
+    
+    def __repr__(self):
+        return '<%s>' % str(self)
     
 ######################
 ### Module testing ###

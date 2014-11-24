@@ -362,7 +362,7 @@ class Worklist(object):
                        volume,
                        liquidClass='', tipMask=None, wash=True):
         """
-        Generate Aspirate commands for a whole plate column
+        Generate Aspirate & Dispense commands for a whole plate column
         @param srcLabel - str, source rack label (on workbench)
         @param srcCol - int, column on source plate
         @param dstLabel - str, destination rack label (on workbench)
@@ -391,8 +391,11 @@ class Worklist(object):
         return i
     
     
-    def multidiswithflush(self, srcLabel='', srcPos=1, dstLabel='', dstPos=[], volume=0, tipVolume=900, liquidClass='', tipMask=None, wash=True, flush=True):
+    def multidiswithflush(self, srcLabel='', srcPos=1, dstLabel='', dstPos=[], 
+                          volume=0, tipVolume=900, liquidClass='', tipMask=None, 
+                          wash=True, flush=True):
         """
+        
         @param wash - bool, replace tip *after* all multi-dispense actions.
 
         """

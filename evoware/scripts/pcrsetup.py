@@ -31,8 +31,8 @@ Syntax:
 Options:
     -i        input excel file listing which source samples should be pipetted
               into which target wells
-    -src      one or more Excel files listing source positions for templates 
-              and primers
+    -src      one or more Excel files listing the position(s) of source samples
+              in source plates
     -useRack  interpret plate IDs in tables as Evo RackLabel (Labware label)
               otherwise, plate IDs are interpreted as $Labware.ID$
 

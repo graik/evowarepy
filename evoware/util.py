@@ -78,6 +78,8 @@ def file2dic( filename ):
                 result[ line.split()[0] ] = l[0]
             if len( l ) > 1:
                 result[ line.split()[0] ] = l
+    except IOError:
+        raise
     except:
         s = "Error parsing option file %s." % filename
         s += '\nLine: ' + str( line )
