@@ -236,14 +236,18 @@ class Worklist(object):
         
         self.f.write(r)
     
-    def A(self, rackID, position, volume):
+    def A(self, rackID, position, volume, byLabel=False):
         """
         aspirate shortcut with only the three core parameters
         @param rackID - str, source labware ID (or rack ID if labware lacks ID)
         @param position - int, source well position
         @param volume - int, aspiration volume
+        @param byLabel - bool, use rack label instead of labware / rack ID
         """
-        self.aspirate(rackID=rackID, position=position, volume=volume)
+        if not byLabel:
+            self.aspirate(rackID=rackID, position=position, volume=volume)
+        else:
+            self.aspirate(rackLabel=rackID, position=position, volume=volume)
 
     
     def dispense(self, rackID='', rackLabel='', rackType='', 
@@ -278,7 +282,7 @@ class Worklist(object):
         if wash:
             self.f.write('W;\n')
     
-    def D(self, rackID, position, volume, wash=True):
+    def D(self, rackID, position, volume, wash=True, byLabel=False):
         """
         dispense shortcut with only the three core parameters
         @param rackID - str, dest. labware ID (or rack ID if labware lacks ID)
@@ -286,9 +290,14 @@ class Worklist(object):
         @param volume - int, aspiration volume
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
+        @param byLabel - bool, use rack label instead of labware/rack ID [False]
         """
-        self.dispense(rackID=rackID, position=position, volume=volume,
-                      wash=wash)
+        if not byLabel:
+            self.dispense(rackID=rackID, position=position, volume=volume,
+                          wash=wash)
+        else:
+            self.dispense(rackLabel=rackID, position=position, volume=volume,
+                          wash=wash)
 
     def distribute(self, srcRackID='', srcRackLabel='', srcRackType='', 
                    srcPosStart=1, srcPosEnd=96,
@@ -344,7 +353,7 @@ class Worklist(object):
         
     
     def transfer(self, srcID, srcPosition, dstID, dstPosition, volume,
-                 wash=True):
+                 wash=True, byLabel=False):
         """
         @param srcID - str, source labware ID (or rack label if missing)
         @param srcPosition - int, source well position
@@ -353,14 +362,16 @@ class Worklist(object):
         @param volume - int, aspiration volume
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
+        @param byLabel - bool, use rack label instead of labware/rack ID [False]
+
         """
-        self.A(srcID, srcPosition, volume)
-        self.D(dstID, dstPosition, volume, wash=wash)
+        self.A(srcID, srcPosition, volume, byLabel=byLabel)
+        self.D(dstID, dstPosition, volume, wash=wash, byLabel=byLabel)
   
     
     def transferColumn(self, srcID, srcCol, dstID, dstCol, 
                        volume,
-                       liquidClass='', tipMask=None, wash=True):
+                       liquidClass='', tipMask=None, wash=True, byLabel=False):
         """
         Generate Aspirate & Dispense commands for a whole plate column
         @param srcID - str, source labware ID (or rack label if missing)
