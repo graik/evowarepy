@@ -99,7 +99,9 @@ class PlateFormat(object):
             r = number
         
         if r > self.n:
-            raise PlateError, 'plate position exceeds number of wells'
+            raise PlateError, 'plate position %r exceeds number of wells' % r
+        if not r:
+            raise PlateError, 'invalid plate position: %r' % pos
         
         return r
     

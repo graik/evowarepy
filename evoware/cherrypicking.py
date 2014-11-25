@@ -94,13 +94,19 @@ class BaseIndex(object):
 
     _header0 = HEADER_FIRST_VALUE.lower()
 
-    def __init__(self, plateformat=plates.PlateFormat(96)):
+    def __init__(self, plateformat=plates.PlateFormat(96),
+                 relaxedId=True):
         """
         @param plateformat: plates.PlateFormat, default microplate format
+        @param relaxedId: bool, fall back to matching by main ID only if sub-ID 
+                          is not given, for example:
+                              parts['Bba001'] may return parts['Bba001#a']
         """
         self._params = {}
         self._index = {}
         self._plates = {'default':plateformat}
+        
+        self.relaxedId = relaxedId
 
     def parseParam(self, values, keyword='param'):
         """
@@ -247,8 +253,15 @@ class BaseIndex(object):
         PartIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
         @raise KeyError, if given ID doesn't match any registered part
         """
-        id = self.convertId(item)
-        return self._index[id]
+        try:
+            id = self.convertId(item)
+            return self._index[id]
+        except KeyError:
+            if self.relaxedId:
+                for key, value in self._index.items():
+                    if key.split('#')[0] == id:
+                        return value
+                raise
     
     def __len__(self):
         """len(PickList) -> int, number of samples to pick"""
@@ -278,6 +291,9 @@ class BaseIndex(object):
 
         r = self[id]
         return r['plate'], r['pos']
+    
+    def plateFormat(self, plate=''):
+        return self._plates.get(plate, self._plates['default'])
 
 
 class PartIndex(BaseIndex):
@@ -420,6 +436,48 @@ class TargetIndex(BaseIndex):
 
         self._volume.update(r)
     
+    def toWorklist(self, fout, parts, srccolumns=[], reportErrors=True ):
+        """
+        @param fout - str, output file name for worklist
+        @param parts- PartIndex, table of source constructs and their locations
+        @param srccolumns - [str], source columns in the target index [all]
+        @param reportError - bool, report worklist errors in User dialog [True]
+        """
+        srccolumns = [s.strip() for s in srccolumns or self.source_cols]
+        assert(isinstance(parts, PartIndex))
+
+        with W.Worklist(fout, reportErrors=reportErrors) as wl:
+            
+            for col in srccolumns:
+                V = self._volume.get(col, self._volume['default'])
+                
+                for target, d in self._index.items():
+                    
+                    try:
+                        dst_plate, dst_pos = self.position(target)
+                        
+                        if type(col) in [tuple,list]:
+                            src_id = [d[s] for s in col]
+                        src_id = d[col]
+                        
+                        if src_id:
+                            
+                            src_plate, src_pos = parts.position(src_id)
+                            
+                            dst_format = self.plateFormat(dst_plate)
+                            src_format = parts.plateFormat(src_plate)
+                            
+                            dst_pos = dst_format.pos2int(dst_pos)
+                            src_pos = src_format.pos2int(src_pos)
+                            
+                            wl.transfer(src_plate, src_pos, dst_plate, dst_pos, 
+                                        V)
+                    except plates.PlateError, why:
+                        raise IndexFileError, \
+                              'Error processing target record "%s":\n%s' \
+                              % (target, why) 
+            
+    
     
 class CherryWorklist(object):
     
@@ -429,7 +487,7 @@ class CherryWorklist(object):
     
 ######################
 ### Module testing ###
-import testing
+import testing, tempfile
 
 class Test(testing.AutoTest):
     """Test PlateFormat"""
@@ -437,11 +495,20 @@ class Test(testing.AutoTest):
     TAGS = [ testing.NORMAL ]
 
     def prepare(self):
-        fname = F.testRoot('partslist.xls')
-        self.p = PartIndex()
-        self.p.readExcel(fname)
+        self.f_parts = F.testRoot('partslist.xls')
+        self.f_simple = F.testRoot('targetlist.xls')
+        self.f_pcr = F.testRoot('targetlist_PCR.xls')
+        
+        self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix="worklist_")
+    
+    def cleanUp(self):
+        if not self.DEBUG:
+            F.tryRemove(self.f_worklist)
         
     def test_partIndex(self):
+        self.p = PartIndex()
+        self.p.readExcel(self.f_parts)
+
         self.assertEqual(self.p['sb0101',2], self.p['sb0101#2'])
         self.assertEqual(len(self.p['sb0111']), 2)
         
@@ -455,23 +522,26 @@ class Test(testing.AutoTest):
         self.assertEqual(self.p._plates['SB11'], plates.PlateFormat(384))
 
     def test_targetIndex_simple(self):
-        fname = F.testRoot('targetlist.xls')
         t = TargetIndex(sourceColumns=[('construct','clone')])
-        t.readExcel(fname)
+        t.readExcel(self.f_simple)
     
     def test_targetIndex_multiple(self):
-        fname = F.testRoot('targetlist_PCR.xls')
         t = TargetIndex(sourceColumns=['template','primer1','primer2'])
-        t.readExcel(fname)
+        t.readExcel(self.f_pcr)
         
         self.assertTrue(t._volume['template'] == 2)
         self.assertEqual(t._volume['primer1'], 5)
         self.assertEqual(t._volume['primer2'], 5)
-
-
-fname = F.testRoot('partslist.xls')
-self = PartIndex()
-self.readExcel(fname)
+    
+    def test_generate_worklist(self):
+        parts = PartIndex()
+        parts.readExcel(self.f_parts)
+        
+        t = TargetIndex(sourceColumns=['template','primer1','primer2'])
+        t.readExcel(self.f_pcr)
+        
+        t.toWorklist(self.f_worklist, parts)
+        
 
 fname = F.testRoot('targetlist.xls')
 t = TargetIndex(sourceColumns=[('construct','clone')])
