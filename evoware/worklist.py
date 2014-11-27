@@ -46,9 +46,11 @@ class Worklist(object):
         finally:    
             wl.close()
 
-    There are two properties:
+    The file (handle) will be created and opened only with the first "write" 
+    statement (wl.A() in the above example). There are two properties:
     
-    * f -- gives access to the writable file handle (a readonly property)
+    * f -- gives access to the writable file handle (a readonly property,
+            first access will create and open the file)
     
     * plateformat -- read or modify the number of wells per plate (default: 96)
                    this parameter is used to calculate positions and number
@@ -131,9 +133,7 @@ class Worklist(object):
     
     Worklist.write will check your input for line breaks, remove any of them
     and then add a standard line break as required by worklists. That means,
-    you don't need to add a line break to the input string.
-    
-    
+    you don't need to add a line break to the input string.    
     """   
 
     ALLOWED_PLATES = [6, 12, 24, 96, 384, 1536]
