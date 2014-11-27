@@ -38,7 +38,8 @@ Syntax (interactive):
 
 
 Options:
-    -dialogs  generate file open dialogs for missing input files
+    -dialogs  generate file open dialogs for any missing input files
+              This option also activates user dialog-based error reporting.
     -p        default project directory for input and output files
     
     -i        input excel file listing which source samples should be pipetted
@@ -106,25 +107,31 @@ def cleanOptions( options ):
 # MAIN
 ###########################
 
-if len(sys.argv) < 2:
-    _use( _defaultOptions() )
-    
-options = U.cmdDict( _defaultOptions() )
-
 try:
-    options = cleanOptions(options) 
-except KeyError, why:
-    print 'missing option: ', why
-    _use(options)
+    if len(sys.argv) < 2:
+        _use( _defaultOptions() )
+        
+    options = U.cmdDict( _defaultOptions() )
+    
+    try:
+        options = cleanOptions(options) 
+    except KeyError, why:
+        print 'missing option: ', why
+        _use(options)
+    
+    parts = P.PartIndex()
+    for f in options['src']:
+        parts.readExcel(f)
+    
+    targets = P.TargetIndex(srccolumns=['template', 'primer1', 'primer2'])
+    targets.readExcel(options['i'])
+    
+    cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
+    cwl.toWorklist(byLabel=options['useLabel'])
+    cwl.close()
 
-parts = P.PartIndex()
-for f in options['src']:
-    parts.readExcel(f)
-
-targets = P.TargetIndex(srccolumns=['template', 'primer1', 'primer2'])
-targets.readExcel(options['i'])
-
-cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
-cwl.toWorklist(byLabel=options['useLabel'])
-cwl.close()
-print "Cherry-picking Worklist written to: ", cwl.wl
+except Exception, why:
+    if 'dialogs' in options:
+        D.lastException('Error generating Worklist')
+    else:    
+        raise

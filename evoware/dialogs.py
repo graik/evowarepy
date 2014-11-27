@@ -67,10 +67,10 @@ def error(title, message):
     """Display error dialog box to user"""
     tkMessageBox.showerror(title, message)
 
-def lastException():
+def lastException(title=None):
     """Report last exception in a dialog box."""
     msg = __lastError()
-    tkMessageBox.showerror(title='Python Exception', message=msg)
+    tkMessageBox.showerror(title= title or 'Python Exception', message=msg)
 
 def __lastError():
     """
