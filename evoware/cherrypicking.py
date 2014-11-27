@@ -17,11 +17,11 @@
 
 import copy, collections
 
-import xlrd as X  ## dependency
-
 import fileutil as F
 import worklist as W
 import plates
+
+import xlrd as X  ## dependency
 
 class IndexFileError( Exception ):
     pass
@@ -496,6 +496,8 @@ class CherryWorklist(object):
         
         for col in srccolumns:
             V = self.iTargets.volume(col, volume)
+            
+            self.wl.comment('Processing source column %s' % col)
             
             for target, d in self.iTargets.items():
                 

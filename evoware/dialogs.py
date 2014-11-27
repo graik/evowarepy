@@ -35,7 +35,8 @@ def askForFile(defaultextension='*.csv',
                           ('All files', '*.*')), 
                initialdir='', 
                initialfile='', 
-               multiple=False, 
+               multiple=False,
+               newfile=False,
                title=None):
     """present simple Open File Dialog to user and return selected file."""
     options = dict(defaultextension=defaultextension, 
@@ -45,8 +46,14 @@ def askForFile(defaultextension='*.csv',
                multiple=multiple, 
                title=title)
     
-    r = tkFileDialog.askopenfilename(**options)
+    if not newfile:
+        r = tkFileDialog.askopenfilename(**options)
+    else:
+        del options['multiple']
+        r = tkFileDialog.asksaveasfilename(**options)
     return r
+
+
 
 def info(title, message):
     """Display info dialog box to user"""

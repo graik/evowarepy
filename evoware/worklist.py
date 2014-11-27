@@ -161,7 +161,7 @@ class Worklist(object):
         self.columns = 12
         
     def __str__(self):
-        return 'Worklist object writing to %s' % self.fname
+        return 'Worklist in %s' % self.fname
         
     def _get_file(self):
         if not self._f:
