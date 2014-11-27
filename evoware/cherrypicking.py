@@ -405,15 +405,15 @@ class TargetIndex(BaseIndex):
     "template".
     """
 
-    def __init__(self, sourceColumns=['source'], volume=None ):
+    def __init__(self, srccolumns=['source'], volume=None ):
         """
         
-        @param sources: [str] | [(str,str),str], list of column headers
+        @param srccolumns: [str] | [(str,str),str], list of column headers
         """
         super(TargetIndex, self).__init__()  
         self._index = collections.OrderedDict()  ## replace unordered dict
         
-        self.source_cols = self._clean_headers(sourceColumns)
+        self.source_cols = self._clean_headers(srccolumns)
         self._volume = {'default':volume}
 
     def _clean_headers(self, values):
@@ -436,53 +436,93 @@ class TargetIndex(BaseIndex):
 
         self._volume.update(r)
     
-    def toWorklist(self, fout, parts, srccolumns=[], reportErrors=True ):
+    def volume(self, srcol, default=None):
         """
-        @param fout - str, output file name for worklist
-        @param parts- PartIndex, table of source constructs and their locations
-        @param srccolumns - [str], source columns in the target index [all]
-        @param reportError - bool, report worklist errors in User dialog [True]
+        @param srcol - str, source column name
+        @param default - int | float, default volume if none registered for
+                         given column AND if there is no default volume for
+                         the table.
+        @return int | float | None, volume registered for given source column
         """
-        srccolumns = [s.strip() for s in srccolumns or self.source_cols]
-        assert(isinstance(parts, PartIndex))
-
-        with W.Worklist(fout, reportErrors=reportErrors) as wl:
-            
-            for col in srccolumns:
-                V = self._volume.get(col, self._volume['default'])
-                
-                for target, d in self._index.items():
-                    
-                    try:
-                        dst_plate, dst_pos = self.position(target)
-                        
-                        if type(col) in [tuple,list]:
-                            src_id = [d[s] for s in col]
-                        src_id = d[col]
-                        
-                        if src_id:
-                            
-                            src_plate, src_pos = parts.position(src_id)
-                            
-                            dst_format = self.plateFormat(dst_plate)
-                            src_format = parts.plateFormat(src_plate)
-                            
-                            dst_pos = dst_format.pos2int(dst_pos)
-                            src_pos = src_format.pos2int(src_pos)
-                            
-                            wl.transfer(src_plate, src_pos, dst_plate, dst_pos, 
-                                        V)
-                    except plates.PlateError, why:
-                        raise IndexFileError, \
-                              'Error processing target record "%s":\n%s' \
-                              % (target, why) 
-            
+        return self._volume.get(srcol, self._volume['default']) or default
     
-    
+   
 class CherryWorklist(object):
+    """
+    Usage:
+    >>> targets = TargetIndex()
+    >>> targets.readExcel('pcr_reactions.xls')
+    >>>
+    >>> parts = PartIndex()
+    >>> parts.readExcel('templates.xls')
+    >>> parts.readExcel('primers.xls')
+    >>>
+    >>> cwl = CherryWorklist('worklist.gwl', targets, parts)
+    >>> cwl.toWorklist(volume=5, byLabel=True)
+    >>> cwl.close()
     
-    def __init__(self, targetIndex, sourceIndex ):
-        pass
+    This will read in three Excel files -- one containing a definition of
+    new reactions / wells to create or cherry pick to, the other two containing
+    the location of all the templates and primers references in the first one.
+    
+    cwl.toWorklist() will populate the worklist text file with aspirate/dispense
+    statements that transfer liquid from source wells to target wells. The plate
+    IDs used in the input tables can either be interpreted as barcodes/IDs 
+    (byLabel=False which is the default) or they will be interpreted as 
+    labware labels (byLabel=True).
+    
+    The volume to be transferred can be specified for each source column within
+    the target Excel table (see TargetIndex).
+    """
+    
+    def __init__(self, fout, targetIndex, sourceIndex, reportErrors=False):
+        self.iTargets = targetIndex
+        self.iParts = sourceIndex
+        self.iProcessed = TargetIndex()
+        self.wl = W.Worklist(fout, reportErrors=reportErrors)
+        
+    def close(self):
+        """close the internal worklist file handle"""
+        self.wl.close()
+    
+    def toWorklist(self, srccolumns=[], volume=None, byLabel=False):
+        """
+        @param srccolumns - [str], source columns to be processed [all]
+        @param volume - int, transfer volume if none is specified in table [None]
+        @param byLabel - bool, use labware labels as IDs rather than 
+                         ID/barcode [False]
+        """
+        srccolumns = [s.strip() for s in srccolumns] or self.iTargets.source_cols
+        
+        for col in srccolumns:
+            V = self.iTargets.volume(col, volume)
+            
+            for target, d in self.iTargets.items():
+                
+                try:
+                    dst_plate, dst_pos = self.iTargets.position(target)
+                    
+                    if type(col) in [tuple,list]:
+                        src_id = [d[s] for s in col]
+                    src_id = d[col]
+                    
+                    if src_id:
+                        
+                        src_plate, src_pos = self.iParts.position(src_id)
+                        
+                        dst_format = self.iTargets.plateFormat(dst_plate)
+                        src_format = self.iParts.plateFormat(src_plate)
+                        
+                        dst_pos = dst_format.pos2int(dst_pos)
+                        src_pos = src_format.pos2int(src_pos)
+                        
+                        self.wl.transfer(src_plate, src_pos, dst_plate, dst_pos, 
+                                         V, byLabel=byLabel)
+                except plates.PlateError, why:
+                    raise IndexFileError, \
+                          'Error processing target record "%s":\n%s' \
+                          % (target, why) 
+        
     
     
 ######################
@@ -533,6 +573,15 @@ class Test(testing.AutoTest):
         self.assertEqual(t._volume['primer1'], 5)
         self.assertEqual(t._volume['primer2'], 5)
     
+    def test_generate_worklist_v0(self):
+        parts = PartIndex()
+        parts.readExcel(self.f_parts)
+        
+        t = TargetIndex(sourceColumns=['template','primer1','primer2'])
+        t.readExcel(self.f_pcr)
+        
+        t.toWorklist(self.f_worklist, parts, byLabel=True)
+    
     def test_generate_worklist(self):
         parts = PartIndex()
         parts.readExcel(self.f_parts)
@@ -540,12 +589,10 @@ class Test(testing.AutoTest):
         t = TargetIndex(sourceColumns=['template','primer1','primer2'])
         t.readExcel(self.f_pcr)
         
-        t.toWorklist(self.f_worklist, parts)
+        cwl = CherryWorklist(self.f_worklist, t, parts)
         
-
-fname = F.testRoot('targetlist.xls')
-t = TargetIndex(sourceColumns=[('construct','clone')])
-t.readExcel(fname)
-
-print "Done"
+        cwl.toWorklist(byLabel=True, volume=10)
+        
+        cwl.close()
+    
 
