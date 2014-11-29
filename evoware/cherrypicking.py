@@ -589,5 +589,8 @@ class Test(testing.AutoTest):
         cwl.toWorklist(byLabel=True, volume=10)
         
         cwl.close()
+
+if __name__ == '__main__':
     
+    testing.localTest()
 
