@@ -538,6 +538,7 @@ class Test(testing.AutoTest):
 
     def prepare(self):
         self.f_parts = F.testRoot('partslist.xls')
+        self.f_primers = F.testRoot('primers.xls')
         self.f_simple = F.testRoot('targetlist.xls')
         self.f_pcr = F.testRoot('targetlist_PCR.xls')
         
@@ -564,31 +565,23 @@ class Test(testing.AutoTest):
         self.assertEqual(self.p._plates['SB11'], plates.PlateFormat(384))
 
     def test_targetIndex_simple(self):
-        t = TargetIndex(sourceColumns=[('construct','clone')])
+        t = TargetIndex(srccolumns=[('construct','clone')])
         t.readExcel(self.f_simple)
     
     def test_targetIndex_multiple(self):
-        t = TargetIndex(sourceColumns=['template','primer1','primer2'])
+        t = TargetIndex(srccolumns=['template','primer1','primer2'])
         t.readExcel(self.f_pcr)
         
         self.assertTrue(t._volume['template'] == 2)
         self.assertEqual(t._volume['primer1'], 5)
         self.assertEqual(t._volume['primer2'], 5)
     
-    def test_generate_worklist_v0(self):
-        parts = PartIndex()
-        parts.readExcel(self.f_parts)
-        
-        t = TargetIndex(sourceColumns=['template','primer1','primer2'])
-        t.readExcel(self.f_pcr)
-        
-        t.toWorklist(self.f_worklist, parts, byLabel=True)
-    
     def test_generate_worklist(self):
         parts = PartIndex()
         parts.readExcel(self.f_parts)
+        parts.readExcel(self.f_primers)
         
-        t = TargetIndex(sourceColumns=['template','primer1','primer2'])
+        t = TargetIndex(srccolumns=['template','primer1','primer2'])
         t.readExcel(self.f_pcr)
         
         cwl = CherryWorklist(self.f_worklist, t, parts)
