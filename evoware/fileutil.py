@@ -16,10 +16,12 @@
 """General purpose methods; mostly about file handling"""
 
 import os.path as osp
+import os
 import shutil, glob, sys
 
 import logging
 
+import util
 
 class UtilError( Exception ):
     pass
@@ -136,8 +138,9 @@ def tryRemove(f, verbose=0, tree=0, wildcard=0 ):
             else:
                 os.remove( f )
         return True
-    except:
-        if verbose: logging.warning( 'Cannot remove %r.' % f )
+    except Exception, why:
+        if verbose: logging.warning( 'Cannot remove %r:\n%s' % (f, 
+                                                    util.lastError()) )
         return False
 
 ## quick and dirty command line argument parsing... could be made more elegant

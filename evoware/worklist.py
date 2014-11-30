@@ -475,15 +475,21 @@ class Worklist(object):
     
 ######################
 ### Module testing ###
-import testing
+import testing, tempfile
 
 class Test(testing.AutoTest):
     """Test Worklist"""
 
     TAGS = [ testing.NORMAL ]
 
-    def prepare( self ):
-        self.fname = F.testRoot('worklist_tmp.gwl')
+    def setUp( self ):
+        """Called before *each* test"""
+        self.fname = tempfile.mktemp(suffix=".gwl", prefix='test_worklist_')
+    
+    def tearDown(self):
+        """Called after *each* test"""
+        if not self.DEBUG:
+            F.tryRemove(self.fname, verbose=self.DEBUG)
     
     def test_createWorklist( self ):
         with Worklist(self.fname) as wl:
@@ -495,7 +501,7 @@ class Test(testing.AutoTest):
     def test_worklistFileError( self ):
         
         def inner_call():
-            with Worklist('', reportErrors=self.local) as wl:
+            with Worklist('', reportErrors=False) as wl:
                 wl.f.write('test line 1')
                 wl.f.write('test line 2')
 

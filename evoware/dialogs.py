@@ -111,8 +111,9 @@ class Test(testing.AutoTest):
     
     def test_askForFile( self ):
         """fileutil.askForFile test"""
-        r = askForFile(title='Test File')
-        self.assertNotEqual(r, 'test.dat')
+        if self.local:
+            r = askForFile(title='Test File')
+            self.assertNotEqual(r, 'test.dat')
     
     def test_info(self):
         info('testInfo', 'This is a test.')

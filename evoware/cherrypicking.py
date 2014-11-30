@@ -537,14 +537,16 @@ class Test(testing.AutoTest):
     TAGS = [ testing.NORMAL ]
 
     def prepare(self):
+        """Called once"""
         self.f_parts = F.testRoot('partslist.xls')
         self.f_primers = F.testRoot('primers.xls')
         self.f_simple = F.testRoot('targetlist.xls')
         self.f_pcr = F.testRoot('targetlist_PCR.xls')
-        
-        self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix="worklist_")
+    
+        self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix="test_cherrypicking_")
     
     def cleanUp(self):
+        """Called after all tests"""
         if not self.DEBUG:
             F.tryRemove(self.f_worklist)
         
