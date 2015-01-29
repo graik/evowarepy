@@ -21,7 +21,7 @@ import sys
 ##     for file_info in data_files:
 ##         file_info[0] = '/PURELIB/%s' % file_info[0]
 
-EXCLUDE_FROM_PACKAGES = ['thirdparty']
+EXCLUDE_FROM_PACKAGES = []
 
 long_description = \
  """evoware//py is a Python package supporting the development of Tecan
@@ -40,7 +40,7 @@ setup(
     provides=['evoware'],
 
     ## available on PyPi
-    requires=['xlrd'],
+    install_requires=['xlrd'],
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
     scripts = ['evoware/scripts/pcrsetup.py'],

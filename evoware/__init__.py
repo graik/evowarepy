@@ -23,7 +23,7 @@ __VERSION__ = __version__
 import os.path as osp
 import sys
 
-project_root = osp.abspath( osp.split( osp.abspath(__file__) )[0] + '/../' )
+project_root = osp.abspath( osp.split( osp.abspath(__file__) )[0] )
 
 sys.path.append( osp.join( project_root, 'thirdparty'))
 
