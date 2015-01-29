@@ -13,7 +13,7 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-"""Cherry picking workflow"""
+"""Generate Cherry picking worklist from custom Excel tables"""
 
 import copy, collections
 

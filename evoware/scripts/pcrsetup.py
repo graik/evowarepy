@@ -15,7 +15,7 @@
 ##   limitations under the License.
 """Protoype script for generating PCR setup worklist from Excel files"""
 
-import sys
+import sys, logging
 
 import evoware.util as U
 import evoware.fileutil as F
@@ -116,7 +116,7 @@ try:
     try:
         options = cleanOptions(options) 
     except KeyError, why:
-        print 'missing option: ', why
+        logging.error('missing option: ' + why)
         _use(options)
     
     parts = P.PartIndex()
