@@ -15,6 +15,8 @@ from setuptools import setup, find_packages
 import os
 import sys
 
+import evoware
+
 ## # Small hack for working with bdist_wininst.
 ## # See http://mail.python.org/pipermail/distutils-sig/2004-August/004134.html
 ## if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
@@ -30,7 +32,7 @@ Evoware scripts for robotic liquid handling.
 
 setup(
     name = "evowarepy",
-    version = "0.1.1",
+    version = evoware.__version__,
     url = 'https://github.com/graik/evowarepy',
     download_url= '',
     author = 'Raik Gruenberg',
