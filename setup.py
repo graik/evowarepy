@@ -45,7 +45,8 @@ setup(
     install_requires=['xlrd'],
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
-    scripts = ['evoware/scripts/pcrsetup.py'],
+    scripts = ['evoware/scripts/pcrsetup.py',
+               'evoware/scripts/assemblysetup.py'],
 
     classifiers= ['License :: OSI Approved :: Apache Software License',
                   'Topic :: Scientific/Engineering',
