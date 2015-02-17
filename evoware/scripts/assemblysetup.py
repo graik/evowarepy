@@ -24,15 +24,15 @@ import evoware.cherrypicking as P
 
 def _use( options ):
     print """
-pcrsetup.py -- Generate PCR setup worklist from part index and cherry picking
+assemblysetup.py -- Generate GA setup worklist from part index and cherry picking
                Excel files.
 
 Syntax (non-interactive):
-    pcrsetup.py -i <reactions.xls> -src <templates.xls> <primers.xls>
+    assemblysetup.py -i <reactions.xls> -src <templates.xls> <primers.xls>
                 -o <output.worklist> [-useLabel]
                 
 Syntax (interactive):
-    pcrsetup.py -dialogs [-p <project directory>
+    assemblysetup.py -dialogs [-p <project directory>
                 -o <output.worklist> -i <reactions.xls> -src <templates.xls>] 
                 -useLabel]
 
@@ -50,8 +50,6 @@ Options:
               
     -useLabel interpret plate IDs in tables as Labware label
               otherwise, plate IDs are interpreted as $Labware.ID$ (barcode)
-##    -srcplate only generate worklist for transfers that can be realized with
-              with given source plate(s) (identified by their ID)
 
 If -dialogs is given, a missing -i or -o or -scr option triggers a file open
 dialog(s) for the appropriate file(s).
@@ -84,7 +82,7 @@ def cleanOptions( options ):
                             filetypes=(('Excel classic','*.xls'),('Excel','*.xlsx'),('All files','*.*')), 
                             initialdir=options['p'], 
                             multiple=True, 
-                            title="Source templates and primers and their locations")
+                            title="Source fragments and their locations")
         
         if not 'o' in options:
             options['o'] = D.askForFile(defaultextension='*.gwl', 
@@ -123,7 +121,8 @@ try:
     for f in options['src']:
         parts.readExcel(f)
     
-    targets = P.TargetIndex(srccolumns=['template', 'primer1', 'primer2'])
+    targets = P.TargetIndex(srccolumns=['vector', 'fragment1', 'fragment2', 
+                                        'fragment3', 'fragment4'])
     targets.readExcel(options['i'])
     
     cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
