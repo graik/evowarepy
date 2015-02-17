@@ -35,9 +35,13 @@ class BaseIndex(object):
     * sub-ID ... optional secondary ID, e.g. for clone
     * plate ... plate ID (str or int)
     * pos ... position (str or int)
-    * at least one additional column (number of columns used to identify header line)
     
-    Empty columns (spacers without header name) are currently *not* supported.
+    The order of these columns may be changed but adapt HEADER_FIRST_VALUE.
+    
+    Empty columns (spacers without header name) are currently *not*
+    supported. A workaround is to give spacer columns a one-character header
+    such as '-' or '.'.
+    
     Rows without value in the first column are silently ignored. 
     
     ID + sub-ID (if any) are combined into a 'ID#sub-ID' index key for 
@@ -140,7 +144,7 @@ class BaseIndex(object):
         
 
     def intfloat2int(self,x):
-        """convert floats like 1.0, 100.0, etc. to int where applicable"""
+        """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
         if type(x) is float:
             if x % 1 == 0:
                 x = int(x)
@@ -213,7 +217,7 @@ class BaseIndex(object):
         try:
             row = 0
             values = []
-            ## iterate until there is a row with at least 5 non-empty values
+            ## iterate until there is a row starting with HEADER_FIRST_VALUE
             ## capture any "param, <key>, <value>" entries until then
             while not self.detectHeader(values):
                 values = [ v for v in sheet.row_values(row) if v ] 
@@ -279,7 +283,7 @@ class BaseIndex(object):
     def position(self, id, subid='', default=None):
         """
         Return plate and position of (arbitrary) first match to given 
-        ID, and, if given, plate.
+        ID.
         @param id [, subid]: str, ID and optional sub-ID
         @default: optional default return value
         @return: (str,str), tuple of (plateID, position)
@@ -407,8 +411,8 @@ class TargetIndex(BaseIndex):
 
     def __init__(self, srccolumns=['source'], volume=None ):
         """
-        
         @param srccolumns: [str] | [(str,str),str], list of column headers
+        @param volume: int, default volume for transfer
         """
         super(TargetIndex, self).__init__()  
         self._index = collections.OrderedDict()  ## replace unordered dict
@@ -463,7 +467,7 @@ class CherryWorklist(object):
     
     This will read in three Excel files -- one containing a definition of
     new reactions / wells to create or cherry pick to, the other two containing
-    the location of all the templates and primers references in the first one.
+    the location of all the templates and primers referenced in the first one.
     
     cwl.toWorklist() will populate the worklist text file with aspirate/dispense
     statements that transfer liquid from source wells to target wells. The plate

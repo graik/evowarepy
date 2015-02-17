@@ -42,7 +42,7 @@ Options:
               This option also activates user dialog-based error reporting.
     -p        default project directory for input and output files
     
-    -i        input excel file listing which source samples should be pipetted
+    -i        input excel file listing which source constructs should be pipetted
               into which target wells
     -src      one or more Excel files listing the position(s) of source samples
               in source plates
