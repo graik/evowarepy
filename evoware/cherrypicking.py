@@ -30,7 +30,7 @@ class BaseIndex(object):
     """
     Common base for Table (Excel) parsing.
     
-    Assumes the following columns:
+    Assumes the following columns in the Excel table:
     * ID ... primary ID of construct
     * sub-ID ... optional secondary ID, e.g. for clone
     * plate ... plate ID (str or int)
@@ -300,7 +300,7 @@ class BaseIndex(object):
         return self._plates.get(plate, self._plates['default'])
 
 
-class PartIndex(BaseIndex):
+class SourceIndex(BaseIndex):
     """
     Parse and access a table that maps part-IDs to source locations.
     
@@ -378,7 +378,7 @@ class PartIndex(BaseIndex):
             if entries:
                 r[key] = entries
             
-        p = PartIndex()
+        p = SourceIndex()
         p._index = r
         p._params = copy.copy(self._params)
         
@@ -390,7 +390,7 @@ class TargetIndex(BaseIndex):
     Index extension for a target table mapping constructs with a certain
     ID to a target position.
 
-    Assumes the following columns:
+    Excel layout -- Assumes the following columns:
 
     * ID ... target ID of new well/reaction
     * sub-ID ... optional secondary ID (ID#sub-ID must be unique in table)
@@ -465,9 +465,9 @@ class CherryWorklist(object):
     >>> cwl.toWorklist(volume=5, byLabel=True)
     >>> cwl.close()
     
-    This will read in three Excel files -- one containing a definition of
-    new reactions / wells to create or cherry pick to, the other two containing
-    the location of all the templates and primers referenced in the first one.
+    This will read in two or more Excel files -- one containing a definition of
+    new reactions / wells to create or cherry pick to, the others containing
+    the location of all the sources referenced in the first one.
     
     cwl.toWorklist() will populate the worklist text file with aspirate/dispense
     statements that transfer liquid from source wells to target wells. The plate
@@ -555,7 +555,7 @@ class Test(testing.AutoTest):
             F.tryRemove(self.f_worklist)
         
     def test_partIndex(self):
-        self.p = PartIndex()
+        self.p = SourceIndex()
         self.p.readExcel(self.f_parts)
 
         self.assertEqual(self.p['sb0101',2], self.p['sb0101#2'])
@@ -583,7 +583,7 @@ class Test(testing.AutoTest):
         self.assertEqual(t._volume['primer2'], 5)
     
     def test_generate_worklist(self):
-        parts = PartIndex()
+        parts = SourceIndex()
         parts.readExcel(self.f_parts)
         parts.readExcel(self.f_primers)
         

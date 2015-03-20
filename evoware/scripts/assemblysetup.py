@@ -117,7 +117,7 @@ try:
         logging.error('missing option: ' + why)
         _use(options)
     
-    parts = P.PartIndex()
+    parts = P.SourceIndex()
     for f in options['src']:
         parts.readExcel(f)
     
