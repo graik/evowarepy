@@ -21,9 +21,12 @@ import fileutil as F
 import worklist as W
 import plates
 
-import xlrd as X  ## dependency
+import xlrd as X  ## third party dependency
 
 class IndexFileError( Exception ):
+    pass
+
+class DuplicateID(IndexFileError):
     pass
 
 class BaseIndex(object):
@@ -36,9 +39,10 @@ class BaseIndex(object):
     * plate ... plate ID (str or int)
     * pos ... position (str or int)
     
-    The order of these columns may be changed but adapt HEADER_FIRST_VALUE.
+    The order of these columns may be changed but HEADER_FIRST_VALUE then needs
+    to be adapted.
     
-    Empty columns (spacers without header name) are currently *not*
+    Empty header columns (spacers without header name) are currently *not*
     supported. A workaround is to give spacer columns a one-character header
     such as '-' or '.'.
     
@@ -63,7 +67,7 @@ class BaseIndex(object):
 
     The original ID and sub-ID (not lower-cased) are available in this dict.
 
-    or plate and position of a given entry can be accessed directly:
+    Plate and position of a given entry can also be accessed directly:
     >>> parser.position('BBa0010', 'a')
     ('sb10', 'A2')
     >>> parser.position('bba0010#a')
@@ -71,6 +75,11 @@ class BaseIndex(object):
         
     This base implementation assumes that every ID+sub-ID is assigned to
     exactly one plate and position.
+    
+    This indexing by ID+sub-ID means that two different entries cannot use
+    the same ID+subID. A DuplicateID exception is raised otherwise. This
+    restriction is relaxed in the SourceIndex implementation of this class but
+    currently holds in the other implementations.
     
     Additionally, the parser recognizes two different keywords in the first
     column of any row *before* the table header -- 'plate' and 'param':
@@ -248,13 +257,18 @@ class BaseIndex(object):
         """
         Add new entry to index.
         @param d: dict, {'id':str|int, 'sub-id':str|int, ... }
+        @raise DuplicateID, if ID of given record clashes with existing ID
         """
         part_id = self.convertId( (d['id'], d.get('sub-id', '')) )
+        
+        if part_id in self._index:
+            raise DuplicateID, 'ID %s is used more than once.'
+        
         self._index[ part_id ] = d
     
     def __getitem__(self, item):
         """
-        PartIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
+        SourceIndex[partID] -> [ {'plate':str, 'pos':str, 'barcode':str } ]
         @raise KeyError, if given ID doesn't match any registered part
         """
         try:
@@ -304,14 +318,14 @@ class SourceIndex(BaseIndex):
     """
     Parse and access a table that maps part-IDs to source locations.
     
-    PartIndex extends the BaseIndex class by allowing multiple locations
+    SourceIndex extends the BaseIndex class by allowing multiple locations
     per part. The low level return value of the index thus always is a list
     of dictionaries rather than a single dictionary.
     
     The position() method can be restricted to only match positions in a 
     given plate and will return the first position found (if any).
     
-    The filterByPlate() method returns a new PartIndex containing only 
+    The filterByPlate() method returns a new SourceIndex containing only 
     entries from a given plate.
     """
     
@@ -330,7 +344,7 @@ class SourceIndex(BaseIndex):
 
     
     def __len__(self):
-        """len(partindex) -> int, number of registered positions"""
+        """len(SourceIndex) -> int, number of registered positions"""
         return sum( [ len(i) for i in self._index.values() ] )
     
     def position(self, id, subid='', plate=None, default=None):
@@ -368,7 +382,7 @@ class SourceIndex(BaseIndex):
     
     def filterByPlate(self, plateID):
         """
-        @return PartIndex, sub-index of all partIDs assigned to given plate
+        @return SourceIndex, sub-index of all partIDs assigned to given plate
         """
         plateID = self.clean2str(plateID)
         
@@ -457,7 +471,7 @@ class CherryWorklist(object):
     >>> targets = TargetIndex()
     >>> targets.readExcel('pcr_reactions.xls')
     >>>
-    >>> parts = PartIndex()
+    >>> parts = SourceIndex()
     >>> parts.readExcel('templates.xls')
     >>> parts.readExcel('primers.xls')
     >>>
@@ -554,7 +568,7 @@ class Test(testing.AutoTest):
         if not self.DEBUG:
             F.tryRemove(self.f_worklist)
         
-    def test_partIndex(self):
+    def test_SourceIndex(self):
         self.p = SourceIndex()
         self.p.readExcel(self.f_parts)
 
