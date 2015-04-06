@@ -25,11 +25,24 @@ class XlsReader(object):
     """
     Common base for Table (Excel) parsing.
     
+    Main Table
+    ==========
+    
     A header row is identified according to HEADER_FIRST_VALUE (default:'ID'). 
     The content of each following row is then parsed into a dictionary 
     {column-title:value,} which is appended to the list `XlsReader.rows`.
     
-    Arbitrary parameters can be defined before the header row using the 
+    Empty header columns (spacers without header name) are currently *not*
+    supported. A workaround is to give spacer columns a one-character header
+    such as '-' or '.'.
+    
+    Rows without value in the first column are silently ignored.
+    Only the first sheet in a workbook is parsed (could be easily changed).
+    
+    Parameters
+    ==========
+    
+    Arbitrary parameters can be defined *before* the header row using the 
     following syntax:
         param   <key>   <value>
 
@@ -38,18 +51,28 @@ class XlsReader(object):
     ... which is converted into 
     >>> reader.params['volume'] = 130
     
-    That means the "param" key word in the first colum signals a new parameter
+    The "param" key word in the first colum signals a new parameter
     record, which will be added to the `params` dictionary of the reader.
 
-    Empty header columns (spacers without header name) are currently *not*
-    supported. A workaround is to give spacer columns a one-character header
-    such as '-' or '.'.
+    Usage
+    =====
     
-    Rows without value in the first column are silently ignored. 
-    
+    >>> reader = XlsReader()
+    >>> reader.read('samples.xls')
+    >>> reader.rows[0]
+        {u'plate': u'SB10', u'id': u'sb0101', u'pos': u'A1'}
+    >>> reader.params['setting1']
+        u'value1'
+    >>>
+
+    List-like behaviour
+    ===================
+
     Shortcuts are defined to make the reader behave more like a list:
     >>> reader.rows[0] == reader[0]
     >>> len(reader.rows) == len(reader)
+    
+    Note: not the complete list interface is currently implemented.
     """
     
     #: identify header row if first column has this value 
@@ -161,9 +184,8 @@ class XlsReader(object):
 
     def addEntry(self, d):
         """
-        Add new entry to index.
-        @param d: dict, {'id':str|int, 'sub-id':str|int, ... }
-        @raise DuplicateID, if ID of given record clashes with existing ID
+        Add new row entry to list.
+        @param d: dict, dictionary representing one row
         """
         self.rows  += [ d ]
 
@@ -173,10 +195,11 @@ class XlsReader(object):
             d[key] = self.clean2str(value)
     
     def __len__(self):
-        """len(PickList) -> int, number of samples to pick"""
+        """len(reader) -> int, number of rows"""
         return len(self.rows)
     
     def __getitem__(self, item):
+        """reader[int] -> dict, shortcut to dictionary of given row"""
         return self.rows[item]
     
 
