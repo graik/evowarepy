@@ -22,6 +22,35 @@ class ExcelFormatError(IndexError):
     pass
 
 class XlsReader(object):
+    """
+    Common base for Table (Excel) parsing.
+    
+    A header row is identified according to HEADER_FIRST_VALUE (default:'ID'). 
+    The content of each following row is then parsed into a dictionary 
+    {column-title:value,} which is appended to the list `XlsReader.rows`.
+    
+    Arbitrary parameters can be defined before the header row using the 
+    following syntax:
+        param   <key>   <value>
+
+    Example:
+        param    volume    130    ul    
+    ... which is converted into 
+    >>> reader.params['volume'] = 130
+    
+    That means the "param" key word in the first colum signals a new parameter
+    record, which will be added to the `params` dictionary of the reader.
+
+    Empty header columns (spacers without header name) are currently *not*
+    supported. A workaround is to give spacer columns a one-character header
+    such as '-' or '.'.
+    
+    Rows without value in the first column are silently ignored. 
+    
+    Shortcuts are defined to make the reader behave more like a list:
+    >>> reader.rows[0] == reader[0]
+    >>> len(reader.rows) == len(reader)
+    """
     
     #: identify header row if first column has this value 
     HEADER_FIRST_VALUE = 'ID'
@@ -142,7 +171,14 @@ class XlsReader(object):
         """convert and clean single part index dictionary (in place)"""
         for key, value in d.items():
             d[key] = self.clean2str(value)
-
+    
+    def __len__(self):
+        """len(PickList) -> int, number of samples to pick"""
+        return len(self.rows)
+    
+    def __getitem__(self, item):
+        return self.rows[item]
+    
 
 ######################
 ### Module testing ###
