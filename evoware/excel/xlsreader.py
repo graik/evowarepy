@@ -77,8 +77,8 @@ class XlsReader(object):
     >>> reader.plateFormat('nonsense')  == plates.PlateFormat(96)
     >>> reader.plateFormat('') == plates.PlateFormat(96)
     
-    Usage
-    =====
+    General Usage
+    =============
     
     >>> reader = XlsReader()
     >>> reader.read('samples.xls')
@@ -86,7 +86,8 @@ class XlsReader(object):
         {u'plate': u'SB10', u'id': u'sb0101', u'pos': u'A1'}
     >>> reader.params['setting1']
         u'value1'
-    >>>
+    >>> reader.plateFormat('dest01')
+        <384 well PlateFormat>
 
     List-like behaviour
     ===================
@@ -237,7 +238,7 @@ class XlsReader(object):
         self.rows  += [ d ]
 
     def cleanEntry(self, d):
-        """convert and clean single part index dictionary (in place)"""
+        """convert and clean single row dictionary (in place)"""
         for key, value in d.items():
             d[key] = self.clean2str(value)
     
