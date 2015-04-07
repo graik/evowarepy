@@ -15,6 +15,7 @@
 """Base Parser for Excel tables"""
 
 from evoware import fileutil as F
+from evoware import PlateFormat, PlateError
 
 import xlrd as X  ## third party dependency
 
@@ -53,7 +54,29 @@ class XlsReader(object):
     
     The "param" key word in the first colum signals a new parameter
     record, which will be added to the `params` dictionary of the reader.
-
+    
+    Plate format definitions
+    ========================
+    
+    The 'format' keyword in the first column anywhere before the actual
+    header row signals a special plate format parameter:
+        format    <plate ID>   <number wells>
+    
+    Example:
+        format    assay0123    384
+        format    dest01       96
+    ... which results in:
+    >>> reader.plateformats['assay0123'] == plates.PlateFormat(384)
+    
+    The default plateformat (reader.plateformats['default']) is set to a 96
+    well format (PlateFormat(96)). This can be modified in the XlsReader
+    constructor. The method plateFormat() will return this default format
+    *unless* another format has been specified for a given plate ID.:
+    
+    >>> reader.plateFormat('assay0123') == plates.PlateFormat(384)
+    >>> reader.plateFormat('nonsense')  == plates.PlateFormat(96)
+    >>> reader.plateFormat('') == plates.PlateFormat(96)
+    
     Usage
     =====
     
@@ -80,11 +103,15 @@ class XlsReader(object):
 
     _header0 = HEADER_FIRST_VALUE.lower()
 
-    def __init__(self):
+    def __init__(self, plateformat=PlateFormat(96)):
         """
+        @param plateformat: plates.PlateFormat, default microplate format 
+                            [default: PlateFormat(96)]
         """
         self.params = {}
         self.rows = []
+        
+        self.plateformats = {'default':plateformat}        
 
     def intfloat2int(self,x):
         """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
@@ -122,10 +149,30 @@ class XlsReader(object):
                     raise IndexFileError, 'cannot parse parameter: %r' % values
 
         return {}
+    
+    def parsePlateformat(self, values):
+        """
+        Extract special plate format parameter from header row starting
+        with 'format'.
+        @return {plateID : PlateFormat}, or empty dict
+        """
+        r = self.parseParam(values, keyword='format')
+        if not r:
+            return r
+
+        plate = r.keys()[0]
+        r[plate] = PlateFormat(r[plate])
+
+        return r
+    
 
     def parsePreHeader(self, values):
         r = self.parseParam(values)
         self.params.update(r)
+        
+        r = self.parsePlateformat(values)
+        self.plateformats.update(r)
+        
 
     def detectHeader(self, values):
         if values and unicode(values[0]).lower().strip() == self._header0:
@@ -194,6 +241,14 @@ class XlsReader(object):
         for key, value in d.items():
             d[key] = self.clean2str(value)
     
+    def plateFormat(self, plate=''):
+        """
+        @param plate: str, plate ID (or '')
+        @return PlateFormat, plate format assigned to given plate ID or default
+                format defined for reader.
+        """
+        return self.plateformats.get(plate, self.plateformats['default'])
+
     def __len__(self):
         """len(reader) -> int, number of rows"""
         return len(self.rows)
@@ -236,3 +291,6 @@ class Test(testing.AutoTest):
         self.assertDictEqual(self.r.rows[0], \
             {u'plate': u'SB10', u'id': u'sb0101', u'sub-id': u'2', 
              u'pos': u'A1'} )
+        
+        self.assertEqual(self.r.plateFormat('SB11'), PlateFormat(384))
+        self.assertEqual(self.r.plateFormat(''), PlateFormat(96))
