@@ -26,19 +26,19 @@ class XlsReader(object):
     """
     Common base for Table (Excel) parsing.
     
-    Main Table
-    ==========
+    Table Format
+    ============
     
     A header row is identified according to HEADER_FIRST_VALUE (default:'ID'). 
     The content of each following row is then parsed into a dictionary 
     {column-title:value,} which is appended to the list `XlsReader.rows`.
     
-    Empty header columns (spacers without header name) are currently *not*
+    Empty header columns (e.g. spacers without header name) are currently *not*
     supported. A workaround is to give spacer columns a one-character header
     such as '-' or '.'.
     
     Rows without value in the first column are silently ignored.
-    Only the first sheet in a workbook is parsed (could be easily changed).
+    Only the first sheet in a workbook is parsed (this could be easily changed).
     
     Parameters
     ==========

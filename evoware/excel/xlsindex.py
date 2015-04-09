@@ -42,25 +42,7 @@ class SampleIndex(object):
     As before, rows without value in the first column are silently ignored. 
     Empty header columns (spacers without header name) are *not*
     supported. A workaround is to give spacer columns a one-character header
-    such as '-' or '.'.
-    
-    Plate format handling
-    ======================
-    
-    Beyond the "param" keyword, the parser recognizes 'plate' as a special
-    keyword in the first column of any row *before* the table header.
-    Examples:
-    
-    plate  plate_ID  384   -- will assign 'plate_ID' to a 384 well format
-    plate  XY02      6     -- will assign plate 'XY02' to a 6 well format
-    
-    These values are stored in the BaseIndex._plates dictionary which is mapping
-    plate IDs to plates.PlateFormat instances:
-    >>> parser._plates['plate_ID'] = plates.PlateFormat(384)
-    >>> parser._plates['XY02'] = plates.PlateFormat(6)
-    
-    Default for all plates is PlateFormat(96). This default value can be
-    overridden in the constructor.
+    such as '-' or '.'.    
     """
     
     def __init__(self, plateformat=PlateFormat(96), relaxedId=True):
