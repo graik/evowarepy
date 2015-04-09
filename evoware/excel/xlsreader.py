@@ -143,6 +143,7 @@ class XlsReader(object):
         Extract "param, key, value" parameter from one row of values 
         (collected before the actual table header).
         @return {key : value}, dict with one key:value pair or empty dict
+        @raise ExcelFormatError
         """
         if values:
             v0 = values[0]
@@ -154,7 +155,7 @@ class XlsReader(object):
                     return {key: value}
 
                 except Exception, error:
-                    raise IndexFileError, 'cannot parse parameter: %r' % values
+                    raise ExcelFormatError, 'cannot parse parameter: %r' % values
 
         return {}
     
