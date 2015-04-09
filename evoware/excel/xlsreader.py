@@ -24,7 +24,14 @@ class ExcelFormatError(IndexError):
 
 class XlsReader(object):
     """
-    Common base for Table (Excel) parsing.
+    Low level Excel table parsing. XlsReader extracts rows into a list of
+    dictionaries. Additional (table-wide) parameters are extracted from
+    'param' and 'format' entries placed before the header row. A single
+    XlsReader instance can parse more than one file -- additional rows will
+    be simply appended and parameter dictionaries will be updated with each
+    additional file. However, there are no consistency checks -- i.e. row
+    dictionaries from the second file can have different keys than previous
+    records.
     
     Table Format
     ============
@@ -184,19 +191,21 @@ class XlsReader(object):
         """
         @param values: [any], list of row values from input parser
         @return [unicode], list of table headers, lower case and stripped
-        @raise IndexFileError, if "construct" is missing from headers
+        @raise ExcelFormatError, if "construct" is missing from headers
         """
         r = [ unicode(x).lower().strip() for x in values ]
         if not 'id' in r:
-            raise IndexFileError, 'cannot parse table header %r' % values
+            raise ExcelFormatError, 'cannot parse table header %r' % values
 
         return r
 
     def read(self, fname):
         """
+        Append data from given Excel file to internal list of rows and
+        dictionary of parameters.
         @param fname: str, excel file name including path
         @raise IOError, if file cannot be found (presumably)
-        @raise IndexFileError, if header row cannot be found or interpreted
+        @raise ExcelFormatError, if header row cannot be found or interpreted
         """
         book = X.open_workbook( F.absfile(fname) )
         sheet = book.sheets()[0]
