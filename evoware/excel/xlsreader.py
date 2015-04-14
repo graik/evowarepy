@@ -16,6 +16,7 @@
 
 from evoware import fileutil as F
 from evoware import PlateFormat, PlateError
+import keywords as K
 
 import xlrd as X  ## third party dependency
 
@@ -138,7 +139,7 @@ class XlsReader(object):
         x = x.strip()
         return x
 
-    def parseParam(self, values, keyword='param'):
+    def parseParam(self, values, keyword=K.param):
         """
         Extract "param, key, value" parameter from one row of values 
         (collected before the actual table header).
@@ -155,7 +156,8 @@ class XlsReader(object):
                     return {key: value}
 
                 except Exception, error:
-                    raise ExcelFormatError, 'cannot parse parameter: %r' % values
+                    raise ExcelFormatError, 'cannot parse parameter: %r' \
+                          % values
 
         return {}
     
@@ -165,7 +167,7 @@ class XlsReader(object):
         with 'format'.
         @return {plateID : PlateFormat}, or empty dict
         """
-        r = self.parseParam(values, keyword='format')
+        r = self.parseParam(values, keyword=K.plateformat)
         if not r:
             return r
 
@@ -195,7 +197,7 @@ class XlsReader(object):
         @raise ExcelFormatError, if "construct" is missing from headers
         """
         r = [ unicode(x).lower().strip() for x in values ]
-        if not 'id' in r:
+        if not self._header0 in r:
             raise ExcelFormatError, 'cannot parse table header %r' % values
 
         return r
