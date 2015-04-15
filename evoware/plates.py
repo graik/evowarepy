@@ -68,7 +68,7 @@ class PlateFormat(object):
     def str2tuple(self, pos):
         """
         Normalize position string to tuple.
-        @param well: str, like 'A1' or '12'
+        @param pos: str, like 'A1' or '12'
         @return (str, int) - uppercase letter or '', number
         """
         assert type(pos) in [unicode, str]
