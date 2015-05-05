@@ -541,7 +541,9 @@ class CherryWorklist(object):
                 except plates.PlateError, why:
                     raise IndexFileError, \
                           'Error processing target record "%s":\n%s' \
-                          % (target, why) 
+                          % (target, why)
+            
+            self.wl.B()  ## force tip reset
         
     
     
