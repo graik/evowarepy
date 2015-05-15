@@ -13,14 +13,10 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-from xlsreader import XlsReader
 import keywords as K
 
 from evoware import PlateFormat, PlateError
 
-class XlsSampleReader(XlsReader):
-    HEADER_FIRST_VALUE = K.column_plate
-    
 class SampleError(Exception):
     pass
 
@@ -40,6 +36,12 @@ class Sample(object):
         self.plateformat = plateformat
         self.plateid = plate
         self.position = pos
+        
+        ## add additional arguments as fields to instance
+        self.updateFields(**kwargs)
+
+    def updateFields(self, **kwargs):
+        self.__dict__.update(kwargs)
 
     @property
     def plateid(self):
