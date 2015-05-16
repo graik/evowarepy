@@ -14,8 +14,9 @@
 ##   limitations under the License.
 """Base Parser for Excel tables"""
 
+import evoware as E
 from evoware import fileutil as F
-from evoware import PlateFormat, PlateError
+from evoware import PlateFormat, PlateError, Plate
 import keywords as K
 
 import xlrd as X  ## third party dependency
@@ -63,23 +64,43 @@ class XlsReader(object):
     The "param" key word in the first colum signals a new parameter
     record, which will be added to the `params` dictionary of the reader.
     
-    Plate format definitions
-    ========================
+    Plate and Plate format definitions
+    ==================================
+    
+    XlsReader accepts a PlateIndex instance which maps plate descriptions
+    (evoware.Plate instances) to a given plate ID. Plate instances are
+    important for downstream applications as they capture row:column
+    dimensions (aka plate format) as well as 'rackType' strings (aka labware
+    type, needed if using barcodes).
+
+    The default PlateIndex is a package-wide singleton instance
+    'evoware.plates'. 
     
     The 'format' keyword in the first column anywhere before the actual
-    header row signals a special plate format parameter:
+    header row signals a special plate format parameter which leads to 
+    the addition / overriding of a Plate record in the PlateIndex. 
+    Usage:
         format    <plate ID>   <number wells>
     
     Example:
         format    assay0123    384
         format    dest01       96
-    ... which results in:
-    >>> reader.plateformats['assay0123'] == plates.PlateFormat(384)
+        
+    The above example results in:
     
-    The default plateformat (reader.plateformats['default']) is set to a 96
-    well format (PlateFormat(96)). This can be modified in the XlsReader
-    constructor. The method plateFormat() will return this default format
-    *unless* another format has been specified for a given plate ID.:
+    >>> evoware.plates['assay0123']
+        <Plate assay0123 : (384 wells)>
+    >>> evoware.plates['dest01']
+        <Plate dest01 : (384 wells)>
+    
+    Note that 'assay0123' has been interpreted as 'rackLabel', which is the 
+    default behaviour. Initialize XlsReader with the parameter 'byLabel=False'
+    if plate IDs should be interpreted as barcode. In this case, new
+    plate entries will also receive a default 'rackType' string which can 
+    be modified in the XlsReader constructor.
+    
+    The method plateFormat() will return the default PlateFormat(96) *unless*
+    another format has been specified for a given plate ID.:
     
     >>> reader.plateFormat('assay0123') == plates.PlateFormat(384)
     >>> reader.plateFormat('nonsense')  == plates.PlateFormat(96)
@@ -112,15 +133,21 @@ class XlsReader(object):
 
     _header0 = HEADER_FIRST_VALUE.lower()
 
-    def __init__(self, plateformat=PlateFormat(96)):
+    def __init__(self, plateIndex=E.plates, byLabel=True,
+                 defaultRackType='%i Well Microplate'):
         """
-        @param plateformat: plates.PlateFormat, default microplate format 
-                            [default: PlateFormat(96)]
+        @param plateIndex: PlateIndex instance, default: evoware.plates
+        @param byLabel: bool, interpret plate IDs as rackLabel (True);
+                        if False, all plate IDs are considered barcodes
+        @param defaultRackType: str, labware type assigned to new plates,
+                                see also Plate.__init__
         """
         self.params = {}
         self.rows = []
         
-        self.plateformats = {'default':plateformat}        
+        self.plateindex = plateIndex
+        self.byLabel = byLabel
+        self.defaultRackType = defaultRackType
 
     def intfloat2int(self,x):
         """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
@@ -171,8 +198,16 @@ class XlsReader(object):
         if not r:
             return r
 
-        plate = r.keys()[0]
-        r[plate] = PlateFormat(r[plate])
+        plateid, wells = r.items()[0]
+        
+        if self.byLabel:
+            kwargs = {'rackLabel':plateid}
+        else:
+            kwargs = {'barcode':plateid, 'rackType':self.defaultRackType}
+        
+        plate = Plate(format=PlateFormat(wells), **kwargs)
+            
+        r[plateid] = plate
 
         return r
     
@@ -182,8 +217,7 @@ class XlsReader(object):
         self.params.update(r)
         
         r = self.parsePlateformat(values)
-        self.plateformats.update(r)
-        
+        self.plateindex.update(r)
 
     def detectHeader(self, values):
         if values and unicode(values[0]).lower().strip() == self._header0:
@@ -254,13 +288,12 @@ class XlsReader(object):
         for key, value in d.items():
             d[key] = self.clean2str(value)
     
-    def plateFormat(self, plate=''):
+    def plateFormat(self, plate='', default=PlateFormat(96)):
         """
         @param plate: str, plate ID (or '')
-        @return PlateFormat, plate format assigned to given plate ID or default
-                format defined for reader.
+        @return PlateFormat, plate format assigned to given plate ID
         """
-        return self.plateformats.get(plate, self.plateformats['default'])
+        return self.plateindex.getformat(plate, default=default)
 
     def __len__(self):
         """len(reader) -> int, number of rows"""
@@ -307,3 +340,10 @@ class Test(testing.AutoTest):
         
         self.assertEqual(self.r.plateFormat('SB11'), PlateFormat(384))
         self.assertEqual(self.r.plateFormat(''), PlateFormat(96))
+        
+    def test_xlsreader_barcode(self):
+        self.r2 = XlsReader(byLabel=False)
+        self.r2.read(self.f_parts)
+        
+        self.assertEqual(E.plates['SB11'].rackType, '384 Well Microplate')
+        self.assertEqual(E.plates['SB11'].barcode, 'SB11')
