@@ -182,6 +182,10 @@ class Plate(object):
         return (self.rackLabel==o.rackLabel and self.barcode==o.barcode and \
                 self.format==o.format and self.rackType==o.rackType)
     
+    def __repr__(self):
+        return '<Plate %s : %s (%i wells)>' % (self.rackLabel,self.barcode,
+                                               self.format.n )
+    
     def byLabel(self):
         """
         @return True, if plate can be identified by rackLabel in worklists
