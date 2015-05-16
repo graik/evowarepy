@@ -132,7 +132,70 @@ class PlateFormat(object):
     def __eq__(self, o):
         return isinstance(o, PlateFormat) and \
                self.n == o.n and self.nx == o.nx and self.ny == o.ny
+
+
+class Plate(object):
+    """
+    Basic description of an individual plate or labware object.
     
+    Fields:
+    * rackLabel -- labware or rack label as fixed in deck layout within Evoware
+    * barcode -- rack ID, usually dynamically determined by barcode reader
+    * format -- plates.PlateFormat instance with number of rows and columns;
+                default is 96 well format
+    * rackType -- labware type (string) required by worklist commands if plates
+                  are identified by barcode rather than rackLabel;
+                  default is '96 Well Microplate'
+    
+    Methods:
+    
+    byLabel() -> bool
+    Can be used to set the "byLabel" flag in several worklist commands. Returns
+    True if the plate has a non-empty rackLabel field. Returns False if the
+    plate has a valid pair of barcode and rackType. Otherwise raises a
+    PlateError.
+    
+    __eq__(other) -> bool
+    equality testing between plate instances
+    """
+    
+    def __init__(self, rackLabel='', barcode='', format=PlateFormat(96),
+                 rackType='96 Well Microplate', **kwargs):
+        """
+        @param rackLabel - str, labware (rack) label in Evoware script
+        @param barcode - str, rack ID, typically determined by barcode reader
+        @param format - plates.PlateFormat, default: PlateFormat(96)
+        @param rackType - str, labware (rack) type; required when using barcode
+        @kwargs - any additional keyword args will be merged as fields
+        """
+        self.rackLabel = rackLabel
+        self.barcode = barcode
+        self.format = format
+        self.rackType = rackType
+        
+        self.__dict__.update(**kwargs)
+    
+    def __eq__(self, o):
+        """plate1 == plate2 -> True if all their fields are equal"""
+        if self is o:
+            return True
+        return (self.rackLabel==o.rackLabel and self.barcode==o.barcode and \
+                self.format==o.format and self.rackType==o.rackType)
+    
+    def byLabel(self):
+        """
+        @return True, if plate can be identified by rackLabel in worklists
+        @return False, if plate can be identified by barcode and rackType
+        @raise PlateError, if neither is possible
+        """
+        if self.rackLabel:
+            return True
+        if self.barcode and self.rackType:
+            return False
+        raise PlateError, \
+              'cannot identify plate by either label or (barcode + type)'
+
+
 ######################
 ### Module testing ###
 import testing
@@ -183,6 +246,19 @@ class Test(testing.AutoTest):
         self.assertTrue(f1 == f2)
         self.assertFalse(f2 == f3)
         self.assertEqual(f1,f2)
+    
+    def test_plate(self):
+        p1 = Plate(rackLabel='srcA')
+        p2 = Plate(rackLabel='srcA')
+        p3 = Plate(barcode='0001', param2='extra param')
+        
+        self.assertNotEqual(p1, p3)
+        self.assertEqual(p1, p2)
+        
+        self.assertTrue(p1.byLabel())
+        self.assertFalse(p3.byLabel())
+        
+        self.assertEqual(p3.param2, 'extra param')
         
 
 if __name__ == '__main__':

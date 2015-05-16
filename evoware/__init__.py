@@ -30,6 +30,6 @@ sys.path.append( osp.join( project_root, 'thirdparty'))
 ## Import main classes into package name space for convenience
 from evotask import EvoTask
 from worklist import Worklist, WorklistException
-from plates import PlateFormat, PlateError
+from plates import PlateFormat, PlateError, Plate
 from cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 
