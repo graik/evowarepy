@@ -136,16 +136,36 @@ class PlateFormat(object):
 
 class Plate(object):
     """
-    Basic description of an individual plate or labware object.
+    Description of an individual plate or labware object.
     
     Fields:
+    
     * rackLabel -- labware or rack label as fixed in deck layout within Evoware
     * barcode -- rack ID, usually dynamically determined by barcode reader
     * format -- plates.PlateFormat instance with number of rows and columns;
                 default is 96 well format
+                
+    Properties:
+    
     * rackType -- labware type (string) required by worklist commands if plates
                   are identified by barcode rather than rackLabel;
-                  default is '96 Well Microplate'
+    
+    The getter method of this property can automatically update this rack
+    type string with the number of wells set in the current format. This is
+    best explained with an example:
+
+    >>> plate = Plate(barcode='0001', rackType='%i Well Microplate', 
+                      format=PlateFormat(96))
+    >>> plate.rackType
+        "96 Well Microplate"
+    
+    >>> plate.format = PlateFormat(384)
+    >>> plate.rackType
+        "384 Well Microplate"
+    
+    This mechanism kicks in if there is a "%i" place holder detected anywhere
+    within the given rackType string. "%i Well Microplate" is the default, so
+    the above example works also if no rackType is given.
     
     Methods:
     
@@ -160,20 +180,35 @@ class Plate(object):
     """
     
     def __init__(self, rackLabel='', barcode='', format=PlateFormat(96),
-                 rackType='96 Well Microplate', **kwargs):
+                 rackType='%i Well Microplate', **kwargs):
         """
         @param rackLabel - str, labware (rack) label in Evoware script
         @param barcode - str, rack ID, typically determined by barcode reader
         @param format - plates.PlateFormat, default: PlateFormat(96)
         @param rackType - str, labware (rack) type; required when using barcode
+                          Note: a %i placeholder will, at run time, be replaced 
+                          by current number of wells
         @kwargs - any additional keyword args will be merged as fields
         """
         self.rackLabel = rackLabel
         self.barcode = barcode
         self.format = format
-        self.rackType = rackType
+        
+        self._rackType = rackType
         
         self.__dict__.update(**kwargs)
+    
+    @property
+    def rackType(self):
+        """optionally insert current well number into racktype string"""
+        if '%i' in self._rackType:
+            return self._rackType % self.format.n
+        return self._rackType
+    
+    @rackType.setter
+    def rackType(self, value):
+        """set a new rackType; a %i placeholder will be replaced"""
+        self._rackType = value
     
     def __eq__(self, o):
         """plate1 == plate2 -> True if all their fields are equal"""
@@ -254,7 +289,8 @@ class Test(testing.AutoTest):
     def test_plate(self):
         p1 = Plate(rackLabel='srcA')
         p2 = Plate(rackLabel='srcA')
-        p3 = Plate(barcode='0001', param2='extra param')
+        p3 = Plate(barcode='0001', param2='extra param', 
+                   format=PlateFormat(384), rackType='%i Deepwell Plate')
         
         self.assertNotEqual(p1, p3)
         self.assertEqual(p1, p2)
@@ -263,6 +299,9 @@ class Test(testing.AutoTest):
         self.assertFalse(p3.byLabel())
         
         self.assertEqual(p3.param2, 'extra param')
+        
+        self.assertEqual(p3.rackType, '384 Deepwell Plate')
+        self.assertEqual(p1.rackType, '96 Well Microplate')
         
 
 if __name__ == '__main__':
