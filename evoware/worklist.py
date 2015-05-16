@@ -17,6 +17,7 @@
 
 import fileutil as F
 import dialogs as D
+import plates as P
 
 class WorklistException( Exception ):
     pass
@@ -134,18 +135,7 @@ class Worklist(object):
     Worklist.write will check your input for line breaks, remove any of them
     and then add a standard line break as required by worklists. That means,
     you don't need to add a line break to the input string.    
-    """   
-
-    ALLOWED_PLATES = [6, 12, 24, 96, 384, 1536]
-
-    ## map plate format to 
-    PLATE_ROWS = {6 : 2,
-                  12: 3,
-                  24: 4,
-                  96: 8,
-                  384: 16,
-                  1536: 32}
-    
+    """    
    
     def __init__(self, fname, reportErrors=True):
         """
@@ -156,9 +146,6 @@ class Worklist(object):
         self.fname = F.absfile(fname)
         self._f = None  ## file handle
         self.reportErrors=reportErrors
-        self._plateformat = 96
-        self.rows = 8
-        self.columns = 12
         
     def __str__(self):
         return 'Worklist in %s' % self.fname
@@ -174,18 +161,6 @@ class Worklist(object):
 
     f = property(_get_file, doc='open file handle for writing')
 
-    def _set_plateformat(self, wells=96):
-        if not wells in self.ALLOWED_PLATES:
-            raise WorklistException('plate format %r is not supported' % wells)
-        self._plateformat = wells
-        self.rows = self.PLATE_ROWS[wells]
-        self.columns = wells / self.rows
-        
-    def _get_plateformat(self):
-        return self._plateformat
-
-    plateformat = property( _get_plateformat, _set_plateformat, 
-                            doc='default plate format for column transfers')
     
     def close(self):
         """
@@ -226,8 +201,9 @@ class Worklist(object):
         @param liquidClass - str, alternative liquid class
         @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
         """
-        if not (rackLabel or rackID):
-            raise WorklistException, 'Specify either source labware ID or rack label.'
+        if not (rackLabel or (rackID and rackType)):
+            raise WorklistException, \
+            'Specify either source rack label, or both ID (barcode) and rackType.'
         
         tipMask = str(tipMask or '')
         
@@ -236,16 +212,18 @@ class Worklist(object):
         
         self.f.write(r)
     
-    def A(self, rackID, position, volume, byLabel=False):
+    def A(self, rackID, position, volume, byLabel=False, rackType=''):
         """
         aspirate shortcut with only the three core parameters
         @param rackID - str, source labware ID (or rack ID if labware lacks ID)
         @param position - int, source well position
         @param volume - int, aspiration volume
         @param byLabel - bool, use rack label instead of labware / rack ID
+        @param rackType - str, labware definition, required when using ID
         """
         if not byLabel:
-            self.aspirate(rackID=rackID, position=position, volume=volume)
+            self.aspirate(rackID=rackID, position=position, volume=volume,
+                          rackType=rackType)
         else:
             self.aspirate(rackLabel=rackID, position=position, volume=volume)
 
@@ -269,8 +247,9 @@ class Worklist(object):
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         """
-        if not (rackLabel or rackID):
-            raise WorklistException, 'Specify either destination rack label or ID.'
+        if not (rackLabel or (rackID and rackType)):
+            raise WorklistException, \
+                'Specify either destination rack label or both ID and rack type.'
         
         tipMask = str(tipMask or '')
         
@@ -282,7 +261,7 @@ class Worklist(object):
         if wash:
             self.f.write('W;\n')
     
-    def D(self, rackID, position, volume, wash=True, byLabel=False):
+    def D(self, rackID, position, volume, wash=True, byLabel=False, rackType=''):
         """
         dispense shortcut with only the three core parameters
         @param rackID - str, dest. labware ID (or rack ID if labware lacks ID)
@@ -291,10 +270,11 @@ class Worklist(object):
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         @param byLabel - bool, use rack label instead of labware/rack ID [False]
+        @param rackType - str, labware definition, required when using ID
         """
         if not byLabel:
             self.dispense(rackID=rackID, position=position, volume=volume,
-                          wash=wash)
+                          wash=wash, rackType=rackType)
         else:
             self.dispense(rackLabel=rackID, position=position, volume=volume,
                           wash=wash)
@@ -331,10 +311,12 @@ class Worklist(object):
         
         @param exlcudeWells - [int], list of destination wells to skip []
         """
-        if not (srcRackLabel or srcRackID):
-            raise WorklistException, 'Specify either source rack label or ID.'
-        if not (dstRackLabel or dstRackID):
-            raise WorklistException, 'Specify either destination rack label or ID.'
+        if not (srcRackLabel or (srcRackID and srcRackType)):
+            raise WorklistException, \
+                  'Specify either source rack label or ID + rack type.'
+        if not (dstRackLabel or (dstRackID and dstRackType)):
+            raise WorklistException, \
+                  'Specify either destination rack label or ID + rack type.'
         
         r = 'R;%s;%s;%s;%i;%i;' % (srcRackLabel, srcRackID, srcRackType, 
                                     srcPosStart, srcPosEnd)
@@ -353,7 +335,7 @@ class Worklist(object):
         
     
     def transfer(self, srcID, srcPosition, dstID, dstPosition, volume,
-                 wash=True, byLabel=False):
+                 wash=True, byLabel=False, srcRackType='', dstRackType=''):
         """
         @param srcID - str, source labware ID (or rack label if missing)
         @param srcPosition - int, source well position
@@ -363,42 +345,57 @@ class Worklist(object):
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         @param byLabel - bool, use rack label instead of labware/rack ID [False]
-
+        @param srcRackType - str, labware definition, required when byLabel==False
+        @param dstRackType - str, labware definition, required when byLabel==False
         """
-        self.A(srcID, srcPosition, volume, byLabel=byLabel)
-        self.D(dstID, dstPosition, volume, wash=wash, byLabel=byLabel)
+        self.A(srcID, srcPosition, volume, byLabel=byLabel, rackType=srcRackType)
+        self.D(dstID, dstPosition, volume, wash=wash, byLabel=byLabel, 
+               rackType=dstRackType)
   
     
     def transferColumn(self, srcID, srcCol, dstID, dstCol, 
-                       volume,
-                       liquidClass='', tipMask=None, wash=True, byLabel=False):
+                       volume, plateformat=P.PlateFormat(96),
+                       liquidClass='', tipMask=None, wash=True, 
+                       byLabel=False, srcRackType='', dstRackType=''):
         """
         Generate Aspirate & Dispense commands for a whole plate column
-        @param srcID - str, source labware ID (or rack label if missing)
+        @param srcID - str, source labware ID (or rack label)
         @param srcCol - int, column on source plate
-        @param dstID - str, destination labware ID (or rack label if missing)
+        @param dstID - str, destination labware ID (or rack label)
         @param dstCol - int, column on destination plate
         @param volume - int, aspiration / dispense volume
+        @param plateformat - PlateFormat, default: 96-well layout
         @param liquidClass - str, alternative liquid class
         @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
+        @param byLabel - bool, use rack label instead of labware/rack ID [False]
+        @param srcRackType - str, labware definition, required when byLabel==False
+        @param dstRackType - str, labware definition, required when byLabel==False
         
         @return n - int, number of aspiration / dispense pairs written
         """
-        pos_src = (srcCol - 1) * self.rows + 1
-        pos_dst = (dstCol - 1) * self.rows + 1
+        rows = plateformat.ny
+        pos_src = (srcCol - 1) * rows + 1
+        pos_dst = (dstCol - 1) * rows + 1
         
-        for i in range(0, self.rows):
-            self.aspirate(rackID=srcID, 
-                          position=pos_src + i, 
+        if byLabel:
+            srcRack = {'rackLabel':srcID}
+            dstRack = {'rackLabel':dstID}
+        else:
+            srcRack = {'rackID':srcID, 'rackType':srcRackType}
+            dstRack = {'rackID':dstID, 'rackType':dstRackType}
+        
+        for i in range(0, rows):
+            self.aspirate(position=pos_src + i, 
                           volume=volume, 
-                          liquidClass=liquidClass, tipMask=tipMask)
-            self.dispense(rackID=dstID, 
-                          position=pos_dst + i,
+                          liquidClass=liquidClass, tipMask=tipMask,
+                          **srcRack)
+            self.dispense(position=pos_dst + i,
                           volume=volume,
                           liquidClass=liquidClass, tipMask=tipMask, 
-                          wash=wash)
+                          wash=wash,
+                          **dstRack)
         return i
     
     
@@ -514,17 +511,25 @@ class Test(testing.AutoTest):
                 wl.dispense(rackLabel='dst1', position=i+1, volume=25)
             
             for i in range(8):
-                wl.A('src2', i+1, 100)
-                wl.D('dst2', i+1, 100)
+                wl.A('src2', i+1, 100, byLabel=True)
+                wl.D('dst2', i+1, 100, rackType='microplate, landscape')
             
             for i in range(96):
-                wl.transfer('src3', i+1, 'dst3', i+1, 150, wash=False)
+                wl.transfer('src3', i+1, 'dst3', i+1, 150, wash=False, 
+                            byLabel=True)
+                wl.transfer('src10001', i+1, 'dst30001', i+1, 150, wash=False, 
+                            srcRackType='microplate, landscape',
+                            dstRackType='microplate, landscape')
     
     def test_worklist_highlevel(self):
 
         with Worklist(self.fname, reportErrors=False) as wl:
             wl.comment('Worklist generated by evoware.worklist.py')
-            wl.transferColumn('src3', 2, 'dst3', 12, 120, wash=True)
+            wl.transferColumn('src3', 2, 'dst3', 12, 120, wash=True, 
+                              byLabel=True)
+            wl.transferColumn('src3', 2, 'dst3', 12, 120, wash=True, 
+                              byLabel=False, srcRackType='microplate',
+                              dstRackType='microplate')
             
             wl.comment('worklist.distribute example')
             wl.distribute(srcRackLabel='src1', srcPosStart=1, srcPosEnd=8,
