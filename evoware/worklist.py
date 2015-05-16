@@ -219,7 +219,7 @@ class Worklist(object):
         @param position - int, source well position
         @param volume - int, aspiration volume
         @param byLabel - bool, use rack label instead of labware / rack ID
-        @param rackType - str, labware definition, required when using ID
+        @param rackType - str, labware type, required when using ID
         """
         if not byLabel:
             self.aspirate(rackID=rackID, position=position, volume=volume,
@@ -238,7 +238,7 @@ class Worklist(object):
         @param volume - int, volume in ul
         
         Optional parameters are:
-        @param rackType - str, validate that rack has this type
+        @param rackType - str, validate that labware has this type
         @param tubeID - str, tube bar code
         @param liquidClass - str, alternative liquid class
         @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
@@ -270,7 +270,7 @@ class Worklist(object):
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         @param byLabel - bool, use rack label instead of labware/rack ID [False]
-        @param rackType - str, labware definition, required when using ID
+        @param rackType - str, labware type, required when using ID
         """
         if not byLabel:
             self.dispense(rackID=rackID, position=position, volume=volume,
@@ -345,8 +345,8 @@ class Worklist(object):
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         @param byLabel - bool, use rack label instead of labware/rack ID [False]
-        @param srcRackType - str, labware definition, required when byLabel==False
-        @param dstRackType - str, labware definition, required when byLabel==False
+        @param srcRackType - str, labware type, required when byLabel==False
+        @param dstRackType - str, labware type, required when byLabel==False
         """
         self.A(srcID, srcPosition, volume, byLabel=byLabel, rackType=srcRackType)
         self.D(dstID, dstPosition, volume, wash=wash, byLabel=byLabel, 
@@ -370,8 +370,8 @@ class Worklist(object):
         @param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         @param byLabel - bool, use rack label instead of labware/rack ID [False]
-        @param srcRackType - str, labware definition, required when byLabel==False
-        @param dstRackType - str, labware definition, required when byLabel==False
+        @param srcRackType - str, labware type, required when byLabel==False
+        @param dstRackType - str, labware type, required when byLabel==False
         
         @return n - int, number of aspiration / dispense pairs written
         """
