@@ -15,26 +15,65 @@
 
 import keywords as K
 
-from evoware import PlateFormat, PlateError
+from evoware import PlateFormat, PlateError, Plate, plates
 
 class SampleError(Exception):
     pass
 
 class Sample(object):
-    """Representation of a single well / sample"""
+    """
+    Representation of a single well / sample
     
-    def __init__(self, id=None, subid=None, plate='', pos=0, 
-                 plateformat=PlateFormat(96), **kwargs):
+    Properties:
+    
+    * id - str, main sample ID 
+    * subid - str, secondary ID to, e.g., distinguish replicas and clones
+    * fullid - str, (readonly) gives id#subid if there is a subid, else just id.
+    
+    * plate - a evoware.Plate instance
+    * plateformat - shortcut to the plate's PlateFormat (row:column dimensions)
+    * plateid - shortcut to plate.rackLabel *or* plate.barcode
+    
+    * position - int, well position, e.g. number 1 to 96
+    * position2D - str, human readable well position (e.g. 'A1')
+    A new position can be assigned to position either as number or 2D string.
+    
+    Usage:
+    
+    >>> s = Sample('BBa1000#a', plate=Plate('plateA'), pos='B1')
+    is the same as:
+    >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)
+    and results in:
+    >>> s.id
+       'BBa1000'
+    >>> s.subid
+       'a'
+    >>> s.fullid
+       'BBa1000#a'
+    >>> s.plateformat
+       PlateFormat(96)
+    >>> s.plateid
+       'plateA'
+    
+    Arbitrary additional fields can be given as keyword arguments to the
+    constructor:
+    >>> s = Sample('BBa2000#1', plate=Plate('plateB'), pos=1, temperature=25)
+    results in an additional 'temperature' field:
+    >>> s.temperature
+        25
+    
+    """
+    
+    def __init__(self, id=None, subid=None, plate=None, pos=0,
+                 **kwargs):
         self._id = ''
         self._subid = ''
-        self._plateid = ''
-        self._plateformat = None
+        
+        self._plate = plate or Plate()
         self._pos = 0
         
         ## initialize properties using setter methods
         self.id = (id, subid)    
-        self.plateformat = plateformat
-        self.plateid = plate
         self.position = pos
         
         ## add additional arguments as fields to instance
@@ -45,22 +84,30 @@ class Sample(object):
 
     @property
     def plateid(self):
-        """ID of plate or container holding this sample"""
-        return self._plateid
+        """rack label or barcode of plate holding this sample (readonly)"""
+        return self._plate.rackLabel or self._plate.barcode
     
-    @plateid.setter
-    def plateid(self, plate):
+    @property
+    def plateformat(self):
+        return self.plate.format
+    
+    @property
+    def plate(self):
+        return self._plate
+    
+    @plate.setter
+    def plate(self, plate):
         if plate is None:
-            plate = ''
-        assert type(plate) is str
-        self._plateid = plate.strip()
+            plate = Plate()
+        assert isinstance(plate, Plate)
+        self._plate = plate
     
     def _setpos(self, pos):
-        self._pos = self._plateformat.pos2int(pos)
+        self._pos = self.plateformat.pos2int(pos)
     def _getpos(self):
         return self._pos
     def _getposHuman(self):
-        return self._plateformat.int2human(self._pos)
+        return self.plateformat.int2human(self._pos)
     
     position = property(fget=_getpos, fset=_setpos, 
                         doc="""int, well position of this sample within plate. 
@@ -77,16 +124,7 @@ class Sample(object):
     
     position2D = property(fget=_getposHuman, doc="""str, read-only property.
     'human readable' version of the well position. E.g. 'A1', 'B2', 'H12', etc. 
-    """)
-    
-    def _setplateformat(self, plateformat):
-        assert isinstance(plateformat, PlateFormat)
-        self._plateformat = plateformat
-    def _getplateformat(self):
-        return self._plateformat
-    
-    plateformat = property(_getplateformat, _setplateformat)
-    
+    """)    
 
     def intfloat2int(self,x):
         """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
@@ -180,13 +218,15 @@ class Test(testing.AutoTest):
     TAGS = [ testing.NORMAL ]
 
     def test_sample(self):
-        s = Sample(id='BBa1000', subid=1.0, plate='plateA', pos='A1')
+        s = Sample(id='BBa1000', subid=1.0, plate=Plate('plateA'), pos='A1')
+        
         self.assertEqual(s.id, 'BBa1000')
         self.assertEqual(s.subid, '1')
         self.assertEqual(s.fullid, 'BBa1000#1')
         self.assertEqual(s.position, 1)
         self.assertEqual(s.plateid, 'plateA')
         self.assertEqual(s.position2D, 'A1')
+        self.assertEqual(s.plateformat, PlateFormat(96))
         
         s.id = 'BBa2000'
         self.assertEqual(s.id, 'BBa2000')
