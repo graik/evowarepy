@@ -15,10 +15,17 @@
 
 import keywords as K
 
-from evoware import PlateFormat, PlateError, Plate, plates
+import evoware as E
+from evoware import PlateFormat, PlateError, Plate
 
 class SampleError(Exception):
     pass
+
+def intfloat2int(x):
+    """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
+    if type(x) is float and x % 1 == 0:
+        return int(x)
+    return x
 
 class Sample(object):
     """
@@ -70,10 +77,16 @@ class Sample(object):
         self._subid = ''
         
         self._plate = plate or Plate()
+        assert isinstance(self._plate, Plate)
+        
         self._pos = 0
         
         ## initialize properties using setter methods
-        self.id = (id, subid)    
+        if subid:
+            self.id = (id, subid)
+        else:
+            self.id = id   # supports ID or ID#subID
+
         self.position = pos
         
         ## add additional arguments as fields to instance
@@ -126,13 +139,6 @@ class Sample(object):
     'human readable' version of the well position. E.g. 'A1', 'B2', 'H12', etc. 
     """)    
 
-    def intfloat2int(self,x):
-        """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
-        if type(x) is float:
-            if x % 1 == 0:
-                x = int(x)
-        return x
-
     def _setid(self, ids):
         """
         Normalize input ID or (ID, sub-ID) tuple or ID#subID string into pair of
@@ -145,7 +151,7 @@ class Sample(object):
         if type(ids) not in [tuple, list]:
             ids = (ids,)
 
-        ids = [unicode(self.intfloat2int(x)).strip() for x in ids]
+        ids = [unicode(intfloat2int(x)).strip() for x in ids]
         ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
         
         self._id = ids[0] if len(ids) > 0 else ''
@@ -170,26 +176,48 @@ class Sample(object):
                      doc='sub-ID if any; otherwise empty str')
     fullid = property(fget=_getfullid, fset=_setid, 
                       doc='complete ID which can be either ID or ID#subID')
-
-
-class SampleList(object):
-    """
-    """
     
-    def __init__(self, plateformat=PlateFormat(96), relaxedId=True):
-        """
-        @param plateformat: plates.PlateFormat, default microplate format
-        @param relaxedId: bool, fall back to matching by main ID only if sub-ID 
-                          is not given, for example:
-                              parts['Bba001'] may return parts['Bba001#a']
-        """
-        self.samples = []
-        self.plateformats = {'default':plateformat}
-        self.params = {}
+    
+    def __repr__(self):
+        r = '<%s %s {plate: %r, position: %i}>' % (self.__class__.__name__,
+                                                   self.fullid,
+                                                   self.plate,
+                                                   self.position)
+        return r
+    
+    def __str__(self):
+        return self.__repr__()
+    
+    def __eq__(self, o):
+        if not isinstance(o, self.__class__):
+            return False
+        if self.fullid != o.fullid:
+            return False
+        
+        return self.plate == o.plate and self.position == o.position
 
+
+class SampleValidationError:
+    pass
+
+class SampleConverter(object):
+    """default converter for generating Sample instances from dictionaries"""
+
+    #: class to be used and enforced for entries
+    sampleClass = Sample
+    
+    #: rename input dict keys to standard field names {'synonym' : 'standard'}
+    key2field = {'sub-id' : 'subid'}
+    
+    #: fields to subject to clean2str method
+    fields2strclean = ['id', 'subid']
+    
+    def __init__(self, plateindex=E.plates):
+        self.plateindex = plateindex
+        
     def clean2str(self, x):
         """convert integer floats to int (if applicable), then strip to unicode"""
-        x = self.intfloat2int(x)
+        x = intfloat2int(x)
 
         if type(x) is not unicode:
             x = unicode(x)
@@ -197,16 +225,112 @@ class SampleList(object):
         x = x.strip()
         return x
 
-    def cleanEntry(self, d):
-        """convert and clean single sample dictionary (in place)"""
-        for key, value in d.items():
-            d[key] = self.clean2str(value)
 
-
-    def addraw(self, d):
-        """create new entry from dictionary"""
-        pass
+    def cleanDict(self, d):
+        """
+        Pre-processing of dictionary values.
+        """
+        r = {}
         
+        for key, value in d.items():
+            key = key.lower()
+            
+            if key in self.key2field:
+                key = self.key2field[key]
+            
+            if key in self.fields2strclean:
+                value = self.clean2str(value)
+            
+            r[key] = value
+
+        return r
+
+    def isvalid(self, sample):
+        """@return True, if entry is a valid Sample instance"""
+        assert isinstance(sample, self.sampleClass)
+        return True
+
+    def validate(self, sample):
+        """
+        @return Sample, validated Sample instance
+        @raise SampleValidationError, if entry is not a valid Sample instance
+        """
+        if not self.isvalid(sample):
+            raise SampleValidationError, '%r is not a valid Sample' % sample
+        return sample
+    
+    def getplate(self, plateid):
+        """Note: currently ignores default plate format set in plateIndex"""
+        assert type(plateid) in [str, unicode]
+        return self.plateindex.get(plateid, Plate(plateid))
+
+    def tosample(self, d):
+        if isinstance(d, self.sampleClass):
+            return self.validate(d)
+    
+        d = self.cleanDict(d)
+        
+        if not isinstance(d['plate'], Plate):
+            d['plate'] = self.getplate(d['plate'])
+        
+        r = self.sampleClass(**d)
+        
+        return self.validate(r)
+    
+    def todict(self, sample):
+        if isinstance(sample, dict):
+            return sample
+        
+        assert isinstance(sample, self.sampleClass)
+        r = {u'id':sample.id,
+             u'sub-id':sample.subid,
+             u'plate':sample.plateid,
+             u'pos':sample.position}
+        return r
+ 
+
+from collections import MutableSequence
+
+
+class SampleList(MutableSequence):
+
+    def __init__(self, data=None, plateindex=E.plates,
+                 converterclass=SampleConverter):
+        super(SampleList, self).__init__()
+        self._list = []
+        self._plateindex = plateindex
+        self._converter = converterclass(plateindex=plateindex)
+
+        if data:
+            for i, val in enumerate(data):
+                self.insert(i,val)
+
+    def __len__(self):
+        return len(self._list)
+
+    def __getitem__(self, i):
+        return self._list[i]
+
+    def __delitem__(self, i):
+        del self._list[i]
+
+    def __setitem__(self, i, val):
+        self._list[i] = val
+        return self._list[i]
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return """<SampleList %s>""" % self._list
+
+    def insert(self, i, val):
+        val = self._converter.tosample(val)
+        self._list.insert(i, val)
+
+    def append(self, val):
+        list_idx = len(self._list)
+        self.insert(list_idx, val)
 
 ######################
 ### Module testing ###
@@ -237,4 +361,12 @@ class Test(testing.AutoTest):
         self.assertEqual(s.id, 'BBa3000')
         self.assertEqual(s.subid, 'a')
         
+        s2 = Sample(id='BBa1000#1', plate=Plate('plateA'), pos=1)
+        self.assertEqual(s2.subid, '1')
         
+    def test_sampleconverter(self):
+        d1 = dict(id='BBa1000', subid=1.0, plate=Plate('plateA'), pos='A1')
+        s1 = SampleConverter().tosample(d1)
+        
+        s2 = Sample(id='BBa1000#1', plate=Plate('plateA'), pos=1)
+        self.assertEqual(s1, s2)

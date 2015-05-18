@@ -43,10 +43,12 @@ class PlateIndex(dict):
         if not isinstance(value, Plate):
             raise TypeError, 'cannot assign %r to PlateIndex' % value
         
-        super(PlateIndex, self).__setitem__(key, value)
+        super(PlateIndex, self).__setitem__(key, value)    
     
     def getformat(self, key, default=PlateFormat(96)):
         if not key in self:
+            if 'default' in self:
+                return self['default'].format
             return default
         return self[key].format
     
