@@ -31,13 +31,21 @@ class PlateIndex(dict):
     
     Special methods:
     
-    getformat(key) -> will return the plates.PlateFormat instance of the plate
-                      mapped to key.
+    * getformat(key) -> will return the plates.PlateFormat instance of the plate
+                      mapped to key. If the key is missing, a default format
+                      is returned.
+    
+    Special Property:
+    
+    * defaultformat -> specifies the PlateFormat returned for missing keys    
                       
     A singleton (static) instance of PlateIndex is provided by this module:
     >>> plates
     
     """
+    
+    #: dict key for entry with default plate (format)
+    DEFAULT_KEY = 'default'
     
     def __setitem__(self, key, value):
         if not isinstance(value, Plate):
@@ -45,11 +53,48 @@ class PlateIndex(dict):
         
         super(PlateIndex, self).__setitem__(key, value)    
     
-    def getformat(self, key, default=PlateFormat(96)):
+    @property
+    def defaultformat(self):
+        """
+        Get the default PlateFormat for plates for which there is no entry
+        in the index. Typically, this is the format assigned to the special
+        plate 'default' (see DEFAULT_KEY). If such a 'default' record doesn't
+        exist, PlateFormat(96) will be returned.
+        @return PlateFormat
+        """
+        if self.DEFAULT_KEY in self:
+            return self[self.DEFAULT_KEY].format
+        return PlateFormat(96)
+    
+    @defaultformat.setter
+    def defaultformat(self, plateformat):
+        """
+        Assign a new default PlateFormat. If there is no 'default' plate entry
+        yet, it will be created.
+        @param plateformat: PlateFormat
+        """
+        assert isinstance(plateformat, PlateFormat)
+        
+        if self.DEFAULT_KEY in self:
+            plate = self[self.DEFAULT_KEY]
+            plate.format = plateformat
+        else:
+            plate = Plate(self.DEFAULT_KEY, format=plateformat)
+            self[self.DEFAULT_KEY] = plate
+    
+    def getformat(self, key, default=None):
+        """
+        Get plate format assigned to plate with given ID.
+        @param key: str, plate ID
+        @param default: PlateFormat, if given, will be returned for missing keys
+                        otherwise the defaultformat of the index is returned
+        @return PlateFormat
+        """
         if not key in self:
-            if 'default' in self:
-                return self['default'].format
-            return default
+            if default:
+                return default
+            return self.defaultformat
+
         return self[key].format
     
     def indexByLabel(self):
@@ -101,9 +146,11 @@ class Test(testing.AutoTest):
         ids = ['plate%02i' % i for i in range(10)]
         formats = [PlateFormat(n) for n in [ 1,2,6,12,24,48,96,384,1536,96 ]]
         
-        l = [Plate(rackLabel=s, barcode='bc_%s'%s, format=f) 
-                  for s,f in zip(ids,formats)]
+        # create 10 plates with different IDs and formats
+        l = [ Plate(rackLabel=s, barcode='bc_%s'%s, format=f) 
+                  for s,f in zip(ids,formats) ]
         
+        # add plates to package-wide index
         plates.update({p.rackLabel : p for p in l})
         d = plates
         
@@ -121,3 +168,7 @@ class Test(testing.AutoTest):
         self.assert_(len(d2)==len(d))
         self.assert_(d2['bc_plate01'] == d['plate01'])
         
+        self.assertEqual(d.getformat('plate01'), PlateFormat(2))
+        self.assertEqual(d.getformat('unknown'), d.defaultformat)
+        d.defaultformat = PlateFormat(384)
+        self.assertEqual(d.getformat('unknown'), PlateFormat(384))
