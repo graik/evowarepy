@@ -35,7 +35,9 @@ class PlateIndex(dict):
                       mapped to key. If the key is missing, a default format
                       is returned.
     
-    Special Property:
+    Special Properties:
+    
+    * defaultplate -> a Plate instance for missing entries
     
     * defaultformat -> specifies the PlateFormat returned for missing keys    
                       
@@ -54,6 +56,16 @@ class PlateIndex(dict):
         super(PlateIndex, self).__setitem__(key, value)    
     
     @property
+    def defaultplate(self):
+        if self.DEFAULT_KEY in self:
+            return self[self.DEFAULT_KEY]
+        return Plate(rackLabel=self.DEFAULT_KEY, format=PlateFormat(96))
+
+    @defaultplate.setter
+    def defaultplate(self, plate):
+        self[self.DEFAULT_KEY] = plate
+
+    @property
     def defaultformat(self):
         """
         Get the default PlateFormat for plates for which there is no entry
@@ -62,9 +74,7 @@ class PlateIndex(dict):
         exist, PlateFormat(96) will be returned.
         @return PlateFormat
         """
-        if self.DEFAULT_KEY in self:
-            return self[self.DEFAULT_KEY].format
-        return PlateFormat(96)
+        return self.defaultplate.format
     
     @defaultformat.setter
     def defaultformat(self, plateformat):

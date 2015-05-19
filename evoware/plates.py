@@ -190,6 +190,10 @@ class Plate(object):
                           by current number of wells
         @kwargs - any additional keyword args will be merged as fields
         """
+        assert isinstance(rackLabel, basestring)
+        assert isinstance(barcode, basestring)
+        assert isinstance(format, PlateFormat)
+        
         self.rackLabel = rackLabel
         self.barcode = barcode
         self.format = format
@@ -208,6 +212,7 @@ class Plate(object):
     @rackType.setter
     def rackType(self, value):
         """set a new rackType; a %i placeholder will be replaced"""
+        assert isinstance(value, basestring)
         self._rackType = value
     
     def __eq__(self, o):
