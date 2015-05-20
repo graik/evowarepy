@@ -271,7 +271,9 @@ class SampleConverter(object):
         @return Plate, matching plate instance or default plate of PlateIndex
         """
         assert type(plateid) in [str, unicode]
-        return self.plateindex.get(plateid, self.plateindex.defaultplate)
+        r = self.plateindex.get(plateid, None)
+        r = r or Plate(plateid, format=self.plateindex.defaultformat)
+        return r
 
     def tosample(self, d):
         """
@@ -361,6 +363,15 @@ class SampleList(MutableSequence):
     def append(self, val):
         list_idx = len(self._list)
         self.insert(list_idx, val)
+    
+    def toSampleIndex(self, keyfield='fullid'):
+        r = {}
+        for sample in self._list:
+            key = eval('sample.%s' % keyfield)
+            if not key in r:
+                r[key] = sample
+                
+        return r
 
 ######################
 ### Module testing ###
@@ -445,3 +456,23 @@ class Test(testing.AutoTest):
         
         self.assertEqual(l[1].fullid, 'testsample1#A')
         self.assertEqual(l[1].position, 9)
+        
+        # test IndexGeneration
+        sindex = l.toSampleIndex()
+        self.assertEqual(len(sindex), len(l)-3) # 3 duplicate ID entries
+        self.assertEqual(sindex['sb0102#2'], l[3])
+        self.assertEqual(sindex['sb0103'], l[4])
+
+    def test_samplelist_unknownplates(self):
+        """
+        ensure unknown plates are created with default format but correct ID.
+        """
+        reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
+                     {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
+
+        l = SampleList(reagents, plateindex=E.plates)
+        
+        self.assertEqual(l[0].plate.rackLabel, 'R01')
+        self.assertEqual(l[1].plate.rackLabel, 'R02')
+        self.assertEqual(l[0].plate.format, E.plates.defaultformat)
+            
