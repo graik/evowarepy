@@ -29,11 +29,22 @@ class TargetSample(S.Sample):
     
     >>> targetplate = evoware.plates['PCR-A']  # get a Plate instance
     
-    >>> pick_dict = { <Sample 'reagent1' ...> : 15,
-                      <Sample 'water' ...> : 100}
+    >>> src1 = Sample('reagent1', plate='source1', pos='A1')
+    >>> src2 = Sample('reagent2', plate='source1', pos='B1')
+    
+    >>> pick_dict = { src1 : 15,
+                      src2 : 100}
     
     >>> tsample = TargetSample(id='Bba0000#a', plate=targetplate, pos='B2',
                                sourcevolumes=pick_dict)
+    
+    >>> tsample.sourcevolumes.keys() == [src1, src2]
+    True
+    >>> tsample.sourcevolumes.values() == [15.0, 100.0]
+    True
+    >>> tsample.sourceItems() == [(src1, 15.0), (src2, 100.0)]
+    True
+    >>> 
     """
         
     def updateFields(self, sourcevolumes={}, **kwargs):
