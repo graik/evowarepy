@@ -187,8 +187,6 @@ class Test(testing.AutoTest):
         
         #d['plate01'] = Plate(rackLabel='plate01', format=PlateFormat(1))
         
-        print d
-        
         d2 = d.indexByLabel()
         self.assert_(len(d2)==len(d))
         
