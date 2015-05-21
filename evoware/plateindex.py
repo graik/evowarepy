@@ -107,6 +107,19 @@ class PlateIndex(dict):
 
         return self[key].format
     
+    def getcreate(self, k, d=None):
+        """
+        Get existing or return new instance and add it to the index.
+        @param k: str, plate ID / key
+        @param d: Plate, default plate instance; return and add if not k in index
+        """
+        if k in self:
+            return self[k]
+        if d is not None:
+            self[k] = d
+            return d
+        return None
+    
     def indexByLabel(self):
         """
         @return a new PlateIndex instance with all plates indexed by rackLabel
@@ -151,6 +164,9 @@ class Test(testing.AutoTest):
     """Test PlateIndex"""
 
     TAGS = [ testing.NORMAL ]
+    
+    def prepare(self):
+        plates.clear()    ## prevent spill-over from other module tests
 
     def test_plateindex(self):
         ids = ['plate%02i' % i for i in range(10)]
@@ -169,7 +185,9 @@ class Test(testing.AutoTest):
             self.assertTrue(d[key].byLabel())
             self.assertEqual(key, d[key].rackLabel)
         
-        d['plate01'] == Plate(rackLabel='plate01', format=PlateFormat(1))
+        #d['plate01'] = Plate(rackLabel='plate01', format=PlateFormat(1))
+        
+        print d
         
         d2 = d.indexByLabel()
         self.assert_(len(d2)==len(d))
@@ -182,3 +200,8 @@ class Test(testing.AutoTest):
         self.assertEqual(d.getformat('unknown'), d.defaultformat)
         d.defaultformat = PlateFormat(384)
         self.assertEqual(d.getformat('unknown'), PlateFormat(384))
+
+
+if __name__ == '__main__':
+    
+    testing.localTest()

@@ -71,6 +71,8 @@ class Sample(object):
     
     """
     
+    ##__hash__ = None
+    
     def __init__(self, id=None, subid=None, plate=None, pos=0,
                  **kwargs):
         self._id = ''
@@ -196,7 +198,7 @@ class Sample(object):
             return False
         
         return self.plate == o.plate and self.position == o.position
-
+    
 
 class SampleValidationError:
     pass
@@ -386,6 +388,8 @@ class Test(testing.AutoTest):
         """Called once"""
         import evoware.fileutil as F
         self.f_parts = F.testRoot('partslist.xls')
+        
+        E.plates.clear()  ## reset PlateIndex
 
     def test_sample(self):
         s = Sample(id='BBa1000', subid=1.0, plate=Plate('plateA'), pos='A1')
@@ -411,10 +415,12 @@ class Test(testing.AutoTest):
         self.assertEqual(s2.subid, '1')
         
     def test_sampleconverter(self):
-        d1 = dict(id='BBa1000', subid=1.0, plate=Plate('plateA'), pos='A1')
+        plate = E.plates.getcreate('plateA', Plate('plateA'))
+        
+        d1 = dict(id='BBa1000', subid=1.0, plate=plate, pos='A1')
         s1 = SampleConverter().tosample(d1)
         
-        s2 = Sample(id='BBa1000#1', plate=Plate('plateA'), pos=1)
+        s2 = Sample(id='BBa1000#1', plate=E.plates['plateA'], pos=1)
         self.assertEqual(s1, s2)
 
     def test_samplelist(self):

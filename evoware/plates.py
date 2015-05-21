@@ -180,13 +180,12 @@ class Plate(object):
     plate has a valid pair of barcode and rackType. Otherwise raises a
     PlateError.
     
-    __eq__(other) -> bool
-    equality testing between plate instances.
-    The tradeoff for this custom __eq__ is that plate instances are not any
-    longer hashable and cannot be used as dictionary keys.
+    isequal(other) -> bool
+    Alternative equality testing between plate instances. 
+
+    As the fields of Plate remain mutable, __eq__ was left untouched so that
+    Plate instances remain hashable (by instance identity). 
     """
-   
-    __hash__ = None
     
     def __init__(self, rackLabel='', barcode='', format=PlateFormat(96),
                  rackType='%i Well Microplate', **kwargs):
@@ -224,8 +223,8 @@ class Plate(object):
         assert isinstance(value, basestring)
         self._rackType = value
     
-    def __eq__(self, o):
-        """plate1 == plate2 -> True if all their fields are equal"""
+    def isequal(self, o):
+        """plate1.isequal(plate2) -> True if all their fields are equal"""
         if self is o:
             return True
         return (self.rackLabel==o.rackLabel and self.barcode==o.barcode and \
@@ -306,8 +305,8 @@ class Test(testing.AutoTest):
         p3 = Plate(barcode='0001', param2='extra param', 
                    format=PlateFormat(384), rackType='%i Deepwell Plate')
         
-        self.assertNotEqual(p1, p3)
-        self.assertEqual(p1, p2)
+        self.assert_(p1.isequal(p2))
+        self.assert_(not p1.isequal(p3))
         
         self.assertTrue(p1.byLabel())
         self.assertFalse(p3.byLabel())
@@ -317,14 +316,14 @@ class Test(testing.AutoTest):
         self.assertEqual(p3.rackType, '384 Deepwell Plate')
         self.assertEqual(p1.rackType, '96 Well Microplate')
     
-    def test_plate_nohashing(self):
-        """ensure Plates cannot be hashed"""
-        
-        def inner_call():
-            p1 = Plate('testplate')
-            d = {p1 : 'testvalue'}
-            
-        self.assertRaises(TypeError, inner_call)
+##    def test_plate_nohashing(self):
+##        """ensure Plates cannot be hashed"""
+##        
+##        def inner_call():
+##            p1 = Plate('testplate')
+##            d = {p1 : 'testvalue'}
+##            
+##        self.assertRaises(TypeError, inner_call)
         
 
 if __name__ == '__main__':
