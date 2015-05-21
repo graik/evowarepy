@@ -39,6 +39,8 @@ class PlateFormat(object):
     >>> f.int2human(96)
     'H12'
     
+    Different PlateFormat instances compare equal if they have the same
+    nx and ny dimensions. PlateFormat instances remain hashable.
     """
     
     ex_position = re.compile('([A-Za-z]{0,1})([0-9]+)')
@@ -133,6 +135,9 @@ class PlateFormat(object):
         return isinstance(o, PlateFormat) and \
                self.n == o.n and self.nx == o.nx and self.ny == o.ny
 
+    def __hash__(self):
+        return hash((self.n, self.nx))
+    
 
 class Plate(object):
     """
@@ -176,8 +181,12 @@ class Plate(object):
     PlateError.
     
     __eq__(other) -> bool
-    equality testing between plate instances
+    equality testing between plate instances.
+    The tradeoff for this custom __eq__ is that plate instances are not any
+    longer hashable and cannot be used as dictionary keys.
     """
+   
+    __hash__ = None
     
     def __init__(self, rackLabel='', barcode='', format=PlateFormat(96),
                  rackType='%i Well Microplate', **kwargs):
@@ -307,6 +316,15 @@ class Test(testing.AutoTest):
         
         self.assertEqual(p3.rackType, '384 Deepwell Plate')
         self.assertEqual(p1.rackType, '96 Well Microplate')
+    
+    def test_plate_nohashing(self):
+        """ensure Plates cannot be hashed"""
+        
+        def inner_call():
+            p1 = Plate('testplate')
+            d = {p1 : 'testvalue'}
+            
+        self.assertRaises(TypeError, inner_call)
         
 
 if __name__ == '__main__':
