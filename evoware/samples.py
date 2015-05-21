@@ -29,13 +29,16 @@ def intfloat2int(x):
 
 class Sample(object):
     """
-    Representation of a single well / sample
+    Representation of a single well / sample. 
     
-    Properties:
+    Sample is considered immutable. All sub-fields have to be specified via
+    the constructor and are then available as read-only properties.
+    
+    Properties
     
     * id - str, main sample ID 
     * subid - str, secondary ID to, e.g., distinguish replicas and clones
-    * fullid - str, (readonly) gives id#subid if there is a subid, else just id.
+    * fullid - str, gives id#subid if there is a subid, else just id.
     
     * plate - a evoware.Plate instance
     * plateformat - shortcut to the plate's PlateFormat (row:column dimensions)
@@ -43,7 +46,6 @@ class Sample(object):
     
     * position - int, well position, e.g. number 1 to 96
     * position2D - str, human readable well position (e.g. 'A1')
-    A new position can be assigned to position either as number or 2D string.
     
     Usage:
     
@@ -65,32 +67,57 @@ class Sample(object):
     Arbitrary additional fields can be given as keyword arguments to the
     constructor:
     >>> s = Sample('BBa2000#1', plate=Plate('plateB'), pos=1, temperature=25)
-    results in an additional 'temperature' field:
+    
+    ...results in an additional 'temperature' field:
     >>> s.temperature
         25
+        
+    Equality and hashing:
     
+    ID + subID + plate + position determine the identity of a sample:
+    
+    >>> s1 = Sample('s1', 'a', 'plateA', 1)
+    >>> s2 = Sample('s1#a', plate=evoware.plates['plateA'], pos='A1')
+    >>> s1 == s2
+    True
+    >>> s1 is s2
+    False
+    
+    >>> d = {s1 : 'some value'}
+    >>> d[s2] == 'some value'
+    True
     """
     
-    ##__hash__ = None
-    
-    def __init__(self, id=None, subid=None, plate=None, pos=0,
+    def __init__(self, id='', subid='', plate=None, pos=0,
                  **kwargs):
-        self._id = ''
-        self._subid = ''
+        """
+        @param id: str | float | int | tuple, sample ID or tuple of (id, subid)
+        @param subid: str | float | int, sub-ID, e.g. to distinguish samples 
+                      with equal content
+        @param plate: Plate | str, Plate instance, or plate ID for looking up
+                      plate from evoware.plates. If no plate is given, the
+                      default plate instance from evoware.plates will be
+                      assigned.
+        """        
+        self._subid = unicode(intfloat2int(subid)).strip()
         
-        self._plate = plate or Plate()
+        self._id = ''
+        if self._subid:
+            self._setid((id, subid))
+        else:
+            self._setid(id)   # supports ID or ID#subID
+
+        if isinstance(plate, basestring):
+            plate = E.plates.getcreate(plate)
+        
+        self._plate = plate or E.plates.defaultplate
         assert isinstance(self._plate, Plate)
         
-        self._pos = 0
+        self._pos = self.plateformat.pos2int(pos)
         
-        ## initialize properties using setter methods
-        if subid:
-            self.id = (id, subid)
-        else:
-            self.id = id   # supports ID or ID#subID
-
-        self.position = pos
-        
+        self._hashcache = None
+        self._fullidcache = None
+                
         ## add additional arguments as fields to instance
         self.updateFields(**kwargs)
 
@@ -98,49 +125,58 @@ class Sample(object):
         self.__dict__.update(kwargs)
 
     @property
+    def id(self):
+        """main sample ID (without sub-ID); or empty str"""
+        return self._id
+
+    @property
+    def subid(self):
+        """sub-ID if any; otherwise empty str"""
+        return self._subid
+
+    def _getfullid(self):
+        if self._subid:
+            return '#'.join((self._id, self._subid))
+        return self._id
+
+    @property
+    def fullid(self):
+        """complete ID which can be either ID or ID#subID"""
+        if self._fullidcache is None:
+            self._fullidcache = self._getfullid()
+        return self._fullidcache
+
+    @property
+    def plate(self):
+        """-> Plate, readonly property"""
+        return self._plate
+        
+    @property
+    def position(self):
+        """
+        -> int (readonly), well position of this sample within plate. On a 96
+        well plate, numbers run row-wise from upper left (1 = A1) to lower
+        right (96 = H12). Position 8 would be H1, 9 would be B1 etc.
+        """
+        return self._pos
+
+    @property
     def plateid(self):
         """rack label or barcode of plate holding this sample (readonly)"""
         return self._plate.rackLabel or self._plate.barcode
-    
+
     @property
     def plateformat(self):
         """shortcut for sample.plate.format (readonly)"""
         return self.plate.format
-    
+
     @property
-    def plate(self):
-        return self._plate
-    
-    @plate.setter
-    def plate(self, plate):
-        if plate is None:
-            plate = Plate()
-        assert isinstance(plate, Plate)
-        self._plate = plate
-    
-    def _setpos(self, pos):
-        self._pos = self.plateformat.pos2int(pos)
-    def _getpos(self):
-        return self._pos
-    def _getposHuman(self):
+    def position2D(self):
+        """
+        str (read-only), 'human readable' version of the well position. E.g.
+        'A1', 'B2', 'H12', etc.
+        """
         return self.plateformat.int2human(self._pos)
-    
-    position = property(fget=_getpos, fset=_setpos, 
-                        doc="""int, well position of this sample within plate. 
-    On a 96 well plate, numbers run row-wise from upper left (1 = A1) to 
-    lower right (96 = H12). Position 8 would be H1, 9 would be B1 etc. The
-    position can be assigned a number::
-    >>> sample.position = 9
-    or a more human readable coordinate::
-    >>> sample.position = 'B1'
-    Both will yield the same result::
-    >>> sample.position
-       9
-    """)
-    
-    position2D = property(fget=_getposHuman, doc="""str, read-only property.
-    'human readable' version of the well position. E.g. 'A1', 'B2', 'H12', etc. 
-    """)    
 
     def _setid(self, ids):
         """
@@ -160,26 +196,6 @@ class Sample(object):
         self._id = ids[0] if len(ids) > 0 else ''
         self._subid = ids[1] if len(ids) > 1 else ''
         
-    def _getid(self):
-        return self._id
-    
-    def _getsubid(self):
-        return self._subid
-    def _setsubid(self, subid):
-        self._subid = subid if subid else ''
-    
-    def _getfullid(self):
-        if self._subid:
-            return '#'.join((self._id, self._subid))
-        return self._id
-    
-    id = property(fget=_getid, fset=_setid,
-                  doc='main sample ID (without sub-ID); or empty str')
-    subid = property(fget=_getsubid, fset=_setsubid, 
-                     doc='sub-ID if any; otherwise empty str')
-    fullid = property(fget=_getfullid, fset=_setid, 
-                      doc='complete ID which can be either ID or ID#subID')
-    
     
     def __repr__(self):
         r = '<%s %s {plate: %r, position: %i}>' % (self.__class__.__name__,
@@ -198,6 +214,12 @@ class Sample(object):
             return False
         
         return self.plate == o.plate and self.position == o.position
+    
+    def __hash__(self):
+        if self._hashcache:
+            return self._hashcache
+        self._hashcache = hash((self.fullid, self._plate, self._pos))
+        return self._hashcache
     
 
 class SampleValidationError:
@@ -389,7 +411,7 @@ class Test(testing.AutoTest):
         import evoware.fileutil as F
         self.f_parts = F.testRoot('partslist.xls')
         
-        E.plates.clear()  ## reset PlateIndex
+        E.plates.clear()
 
     def test_sample(self):
         s = Sample(id='BBa1000', subid=1.0, plate=Plate('plateA'), pos='A1')
@@ -402,18 +424,28 @@ class Test(testing.AutoTest):
         self.assertEqual(s.position2D, 'A1')
         self.assertEqual(s.plateformat, PlateFormat(96))
         
-        s.id = 'BBa2000'
+        s = Sample(id='BBa2000', pos=1)
         self.assertEqual(s.id, 'BBa2000')
         self.assertEqual(s.subid, '')
         self.assertEqual(s.fullid, 'BBa2000')
         
-        s.id = 'BBa3000#a'
+        s = Sample(id='BBa3000#a', pos=1)
         self.assertEqual(s.id, 'BBa3000')
         self.assertEqual(s.subid, 'a')
         
         s2 = Sample(id='BBa1000#1', plate=Plate('plateA'), pos=1)
         self.assertEqual(s2.subid, '1')
+    
+    def test_sample_hashing(self):
+        s1 = Sample('s1', 'a', 'plateA', 1)
+        s2 = Sample('s1#a', plate=E.plates['plateA'], pos='A1')
+
+        self.assert_(s1 == s2)
+        self.assert_(s1 is not s2)
         
+        d = {s1 : 'some value'}
+        self.assert_(d[s2] == 'some value')
+    
     def test_sampleconverter(self):
         plate = E.plates.getcreate('plateA', Plate('plateA'))
         

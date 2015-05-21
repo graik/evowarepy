@@ -109,16 +109,22 @@ class PlateIndex(dict):
     
     def getcreate(self, k, d=None):
         """
-        Get existing or return new instance and add it to the index.
+        Get existing or return new Plate instance and add it to the index. If
+        no default is given, an approximate clone of the current defaultplate
+        is made and assigned rackLabel=k. 
         @param k: str, plate ID / key
-        @param d: Plate, default plate instance; return and add if not k in index
+        @param d: Plate, default plate instance; return and add if not k in
+               index
         """
         if k in self:
             return self[k]
-        if d is not None:
-            self[k] = d
-            return d
-        return None
+
+        if d is None:
+            p = self.defaultplate
+            d = Plate(rackLabel=k, format=p.format, rackType=p.rackType)
+
+        self[k] = d
+        return d
     
     def indexByLabel(self):
         """
@@ -198,6 +204,10 @@ class Test(testing.AutoTest):
         self.assertEqual(d.getformat('unknown'), d.defaultformat)
         d.defaultformat = PlateFormat(384)
         self.assertEqual(d.getformat('unknown'), PlateFormat(384))
+        
+        p1 = d.getcreate('testplateA')
+        p2 = d.getcreate('testplateA')
+        self.assert_(p1 is p2)
 
 
 if __name__ == '__main__':
