@@ -176,7 +176,7 @@ class XlsReader(object):
         if values:
             v0 = values[0]
 
-            if v0 and type(v0) in (str,unicode) and v0.lower() == keyword:
+            if v0 and isinstance(v0, basestring) and v0.lower() == keyword:
                 try:
                     key = unicode(values[1]).strip()
                     value = self.intfloat2int(values[2])
