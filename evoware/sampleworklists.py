@@ -17,7 +17,7 @@
 
 import worklist as W
 import samples as S
-from plateindex import plates
+import evoware as E
 
 class TargetSample(S.Sample):
     """
@@ -52,17 +52,38 @@ class TargetSample(S.Sample):
         return self.sourcevolumes.items()
 
 
-class TargetSampleConverter(S.SampleConverter):
+class PickListConverter(S.SampleConverter):
     """
     Convert dictionaries or Sample instances to TargetSample instances.
+
+    This converter assumes a "pick list" input where each row contains:
+       - one or more source columns (sourcefields) pointing to a source 
+         sample ID
+    
+       - optional "<source>_volume" columns where <source> corresponds to
+         a source field
+        
+    If not given in a separate row, volumes can be specified column-wide
+    using the defaultvolumes dictionary {<str source> : <int volume>}.
+    
+    If a given record contains no '<source>_volume' entry, the volume is looked
+    up from defaultvolumes['<source>']. If there is no default volume defined
+    for this source field, a volume of 0 is assigned.
     """
     
     sampleClass = TargetSample
     
-    def __init__(self, plateindex=plates, sourcesamples=[], 
+    def __init__(self, plateindex=E.plates, sourcesamples=[], 
                  sourcefields=['source'], defaultvolumes={} ):
+        """
+        @param plateindex: PlateIndex, mapping plate IDs to Plate instances
+        @param sourcesamples: SampleList, to match source sample IDs to Samples
+        @param sourcefields: [str], name of field(s) pointing to source sample
+        @param defaultvolumes: {str:int}, map each or some source field(s) to 
+                               a default volume
+        """
         
-        super(TargetSampleConverter,self).__init__(plateindex)
+        super(PickListConverter,self).__init__(plateindex)
         
         self.sampleindex = sourcesamples.toSampleIndex()
         
@@ -75,7 +96,7 @@ class TargetSampleConverter(S.SampleConverter):
             if not isinstance(srcsample, S.Sample):
                 return False
         
-        return super(TargetSampleConverter, self).isvalid(sample)
+        return super(PickListConverter, self).isvalid(sample)
     
     
     def volumefield(self, field):
@@ -97,8 +118,72 @@ class TargetSampleConverter(S.SampleConverter):
         
         d['sourcevolumes'] = sourcevolumes
      
-        r = super(TargetSampleConverter,self).tosample(d)
+        r = super(PickListConverter,self).tosample(d)
         return r
+    
+
+class DistributionListConverter(S.SampleConverter):
+    """
+    Convert dictionaries or Sample instances to TargetSample instances.
+    
+    This converter assumes a "volume distribution" input format where volumes
+    to distribute are variable and listed in columns with the reagent name
+    used as a column header.
+    
+    Example:
+    
+    >>> reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
+                     {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
+
+    >>> fields = ['reagent1', 'reagent2']
+    
+    >>> c = DistributionListConverter(reagents=reagents, sourcefields=fields)
+    
+    >>> tsample = c.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
+                              'reagent1': 20, 'reagent2': 100})
+    """
+   
+    sampleClass = TargetSample
+    
+    def __init__(self, plateindex=E.plates, reagents=[], 
+                 sourcefields=['source'] ):
+        """
+        @param plateindex: PlateIndex, mapping plate IDs to Plate instances
+        @param reagents: SampleList or [{}], sample IDs *must* match source fields
+        @param sourcefields: [str], name of field(s) giving source volume
+        """
+        super(DistributionListConverter,self).__init__(plateindex)
+    
+        self.reagents = S.SampleList(reagents, plateindex=plateindex)
+        self.reagents = self.reagents.toSampleIndex()
+    
+        self.sourcefields = sourcefields
+
+    
+    def isvalid(self, sample):
+        
+        for srcsample, vol in sample.sourcevolumes.items():
+            if not isinstance(srcsample, S.Sample):
+                return False
+        
+        return super(DistributionListConverter, self).isvalid(sample)
+
+
+    def tosample(self, d):
+        
+        sourcevolumes = {}
+        
+        for f in self.sourcefields:
+            
+            src_sample = self.reagents[f]
+            src_volume = float(d.get(f, 0))
+            
+            sourcevolumes[src_sample] = src_volume
+        
+        d['sourcevolumes'] = sourcevolumes
+        
+        return super(DistributionListConverter, self).tosample(d)
+
 
 class SampleWorklist(W.Worklist):
     """
@@ -125,7 +210,9 @@ class Test(testing.AutoTest):
     TAGS = [ testing.LONG ]
 
     def prepare( self ):
-        pass
+        """reset package plate index between tests"""
+        import evoware as E
+        E.plates.clear()
     
     def test_targetsample(self):
         from evoware import Plate
@@ -158,7 +245,7 @@ class Test(testing.AutoTest):
         
         src_samples = S.SampleList([src_sample1, src_sample2])
         
-        conv = TargetSampleConverter(sourcesamples=src_samples, 
+        conv = PickListConverter(sourcesamples=src_samples, 
                                      sourcefields=['reagent1', 'reagent2'], 
                                      defaultvolumes={'reagent1':15} )
         
@@ -174,7 +261,39 @@ class Test(testing.AutoTest):
         self.assertItemsEqual(sources1, sources2)
         
         
+    def test_distributionConverter(self):
+        import evoware as E
+
+        reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
+                     {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
+
+        fields = ['reagent1', 'reagent2']
+    
+        c = DistributionListConverter(reagents=reagents, sourcefields=fields)
         
+        self.assertEqual(len(E.plates), 2)  # should have inserted the two reagent plates by now
+
+        tsample = c.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
+                              'reagent1': 20, 'reagent2': 100})
+        
+        reagent_instances = S.SampleList(reagents, plateindex=E.plates)
+        
+        self.assertItemsEqual(tsample.sourcevolumes.values(), [20.0, 100.0])
+        
+        s1 = tsample.sourcevolumes.keys()[0]
+        s2 = reagent_instances[0]
+        self.assert_(s1.plate == s2.plate)
+        
+        self.assertItemsEqual(tsample.sourcevolumes.keys(), reagent_instances)
+        
+        self.assert_(S.SampleList(reagent_instances) == S.SampleList(reagents))
+        
+        c2 = DistributionListConverter(reagents=reagent_instances, 
+                                       sourcefields=fields)
+        tsample2 = c2.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
+                              'reagent1': 20, 'reagent2': 100})
+        
+        self.assertEqual(tsample2, tsample)
         
         
     

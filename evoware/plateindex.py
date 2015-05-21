@@ -41,8 +41,10 @@ class PlateIndex(dict):
     
     * defaultformat -> specifies the PlateFormat returned for missing keys    
                       
-    A singleton (static) instance of PlateIndex is provided by this module:
-    >>> plates
+    A singleton (static) instance of PlateIndex is provided by evoware.__init__
+    >>> import evoware as E
+    >>> E.plates
+    {}
     
     """
     
@@ -158,9 +160,6 @@ class PlateIndex(dict):
             r[key] = plate
         return r
 
-## static instance to be used as a singleton index throughout the package
-plates = PlateIndex()
-
 
 ######################
 ### Module testing ###
@@ -172,9 +171,12 @@ class Test(testing.AutoTest):
     TAGS = [ testing.NORMAL ]
     
     def prepare(self):
-        plates.clear()    ## prevent spill-over from other module tests
+        ## plates.clear()    ## prevent spill-over from other module tests
+        pass
 
     def test_plateindex(self):
+        plates = PlateIndex()
+        
         ids = ['plate%02i' % i for i in range(10)]
         formats = [PlateFormat(n) for n in [ 1,2,6,12,24,48,96,384,1536,96 ]]
         

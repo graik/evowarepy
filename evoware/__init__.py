@@ -31,6 +31,8 @@ sys.path.append( osp.join( project_root, 'thirdparty'))
 from evotask import EvoTask
 from worklist import Worklist, WorklistException
 from plates import PlateFormat, PlateError, Plate
-from plateindex import PlateIndex, PlateIndexError, plates
+from plateindex import PlateIndex, PlateIndexError
+plates = PlateIndex()
+
 from cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 

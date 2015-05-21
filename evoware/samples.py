@@ -292,12 +292,10 @@ class SampleConverter(object):
     def getplate(self, plateid):
         """
         @param plateid: str, plate ID (typically rackLabel)
-        @return Plate, matching plate instance or default plate of PlateIndex
+        @return Plate, matching plate instance or new one created by PlateIndex
         """
-        assert type(plateid) in [str, unicode]
-        r = self.plateindex.get(plateid, None)
-        r = r or Plate(plateid, format=self.plateindex.defaultformat)
-        return r
+        assert isinstance(plateid, basestring)
+        return self.plateindex.getcreate(plateid)
 
     def tosample(self, d):
         """
@@ -353,6 +351,9 @@ class SampleList(MutableSequence):
                                method
         """
         super(SampleList, self).__init__()
+        assert isinstance(plateindex, E.PlateIndex)
+        assert issubclass(converterclass, SampleConverter)
+        
         self._list = []
         self._plateindex = plateindex
         self._converter = converterclass(plateindex=plateindex)
@@ -373,6 +374,9 @@ class SampleList(MutableSequence):
     def __setitem__(self, i, val):
         self._list[i] = self._converter.tosample( val )
         return self._list[i]
+    
+    def __eq__(self, o):
+        return self._list == o
 
     def __str__(self):
         return self.__repr__()
@@ -513,4 +517,8 @@ class Test(testing.AutoTest):
         self.assertEqual(l[0].plate.rackLabel, 'R01')
         self.assertEqual(l[1].plate.rackLabel, 'R02')
         self.assertEqual(l[0].plate.format, E.plates.defaultformat)
+        
+        ## test re-creating a sample list
+        l2 = SampleList(l)
+        self.assertEqual(l, l2)
             
