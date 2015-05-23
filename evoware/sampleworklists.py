@@ -221,7 +221,7 @@ class DistributionConverter(S.SampleConverter):
         for f in self.sourcefields:
             
             src_sample = self.reagents[f]
-            src_volume = float(d.get(f, 0))
+            src_volume = float(d.get(f, 0) or 0)  ## '' == '0' == '0.0' == 0
             
             sourcevolumes[src_sample] = src_volume
         
@@ -237,7 +237,7 @@ class DistributionXlsReader(X.XlsReader):
     
     def __init__(self, **kwarg):
         super(DistributionXlsReader,self).__init__(**kwarg)
-        self.reagents = {}
+        self.reagents = []
     
     def parseReagentParam(self, values, keyword=K.reagent):
         if values:
@@ -254,7 +254,9 @@ class DistributionXlsReader(X.XlsReader):
             
     def parsePreHeader(self, values):
         super(DistributionXlsReader, self).parsePreHeader(values)
-        self.reagents.update( self.parseReagentParam(values) )
+        rdict = self.parseReagentParam(values)
+        if rdict:
+            self.reagents.append( rdict )
 
 
 class SampleWorklist(W.Worklist):
@@ -318,16 +320,18 @@ class Test(testing.AutoTest):
 
     def prepare( self ):
         """reset package plate index between tests"""
-        import evoware as E
+        import fileutil as F
         import tempfile
+        import evoware as E
         E.plates.clear()
         
-        self.fname = tempfile.mktemp(suffix=".gwl", prefix='test_distributewl_')
+        self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix='test_distributewl_')
+        self.f_xls = F.testRoot('distribution.xls')
     
     def cleanUp( self ):
         import fileutil as F
         if not self.DEBUG:
-            F.tryRemove(self.fname)
+            F.tryRemove(self.f_worklist)
     
     def test_targetsample(self):
         from evoware import Plate
@@ -430,12 +434,35 @@ class Test(testing.AutoTest):
         
         tsamples = S.SampleList(samples, converter=converter)
         
-        with SampleWorklist(self.fname, reportErrors=True) as wl:
+        with SampleWorklist(self.f_worklist, reportErrors=True) as wl:
             wl.distributeSamples(tsamples)
         
-        fcontent = open(self.fname).readlines()
+        fcontent = open(self.f_worklist).readlines()
         self.assertEqual(fcontent, freference)
 
+    def test_distributionxlsreader(self):
+        xls = DistributionXlsReader()
+        xls.read(self.f_xls)
+        
+        converter = DistributionConverter(reagents=xls.reagents,
+                                          sourcefields=[])
+        targets = S.SampleList(xls.rows, converter=converter )
+        
+        self.assertEqual(len(targets), 10)
+        
+        s, v = targets[1].sourceIndex()['buffer01']
+        self.assertEqual(s.position, 1)
+        self.assertEqual(v,2)
+        self.assertEqual(s.plate.preferredID(), 'reservoirA')
+        
+        s, v = targets[6].sourceIndex()['buffer01']
+        self.assertEqual(v, 0)
+        s, v = targets[6].sourceIndex()['master']
+        self.assertEqual(v, 0)
+        self.assertEqual(s.plate.preferredID(), 'reservoirB')
+        
+        
+        
     
 if __name__ == '__main__':
 

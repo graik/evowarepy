@@ -140,7 +140,7 @@ class XlsReader(object):
         @param byLabel: bool, interpret plate IDs as rackLabel (True);
                         if False, all plate IDs are considered barcodes
         @param defaultRackType: str, labware type assigned to new plates,
-                                see also Plate.__init__
+                                if byLabel=False, see also Plate.__init__
         """
         self.params = {}
         self.rows = []
@@ -192,7 +192,7 @@ class XlsReader(object):
         """
         Extract special plate format parameter from header row starting
         with 'format'.
-        @return {plateID : PlateFormat}, or empty dict
+        @return {plateID : Plate}, or empty dict
         """
         r = self.parseParam(values, keyword=K.plateformat)
         if not r:
