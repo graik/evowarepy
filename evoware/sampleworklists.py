@@ -87,7 +87,7 @@ class TargetSample(S.Sample):
         @return (str,), the fullID of each source sample, aka the reagent key
                         or column header in a reagent distribution
         """
-        return (s.fullid for s in self.sourcevolumes.keys())
+        return [s.fullid for s in self.sourcevolumes.keys()]
 
     def sourceIndex(self):
         """
@@ -191,17 +191,15 @@ class DistributionConverter(S.SampleConverter):
    
     sampleClass = TargetSample
     
-    def __init__(self, plateindex=E.plates, reagents=[], 
-                 sourcefields=['source'] ):
+    def __init__(self, plateindex=E.plates, reagents=[], sourcefields=[] ):
         """
-        @param plateindex: PlateIndex, mapping plate IDs to Plate instances
         @param reagents: SampleList or [{}], sample IDs *must* match source fields
         @param sourcefields: [str], names of reagent/volume field(s) 
                              to process, default: all reagent IDs
         """
         super(DistributionConverter,self).__init__(plateindex)
     
-        self.reagents = S.SampleList(reagents, plateindex=plateindex)
+        self.reagents = S.SampleList(reagents)
         self.reagents = self.reagents.toSampleIndex()
     
         self.sourcefields = sourcefields or self.reagents.keys()
@@ -270,20 +268,22 @@ class SampleWorklist(W.Worklist):
         @param volume: int | float, volume to be transferred
         @param wash: bool, include wash / tip change statement after dispense
         """
-        self.A(src.preferredID(), src.position, volume, byLabel=src.byLabel(), 
-               rackType=src.plate.rackType)
+        self.A(src.plate.preferredID(), src.position, volume, 
+               byLabel=src.plate.byLabel(), rackType=src.plate.rackType)
         
-        self.D(dst.preferredID(), dst.position, volume, wash=wash, 
-               byLabel=dst.byLabel(), rackType=dst.rackType)        
+        self.D(dst.plate.preferredID(), dst.position, volume, wash=wash, 
+               byLabel=dst.plate.byLabel(), rackType=dst.plate.rackType)        
     
     def getReagentKeys(self, targetsamples):
         """collect all source/reagent sample IDs from all target samples"""
         assert isinstance(targetsamples, S.SampleList)
-        keys = set()
+        keys = []
         
         for ts in targetsamples:
             assert isinstance(ts, TargetSample)
-            keys.add(ts.sourceIds())
+            for k in ts.sourceIds():
+                if not k in keys:
+                    keys.append(k)
         
         return keys
     
@@ -348,7 +348,7 @@ class Test(testing.AutoTest):
         
         self.assertItemsEqual(sources1, sources2)
         
-    def test_targetsampleconverter(self):
+    def test_pickingconverter(self):
         import evoware as E
         
         E.plates['target'] = E.Plate('target')
@@ -391,11 +391,11 @@ class Test(testing.AutoTest):
         tsample = c.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
                               'reagent1': 20, 'reagent2': 100})
         
-        reagent_instances = S.SampleList(reagents, plateindex=E.plates)
+        reagent_instances = S.SampleList(reagents)
         
         self.assertItemsEqual(tsample.sourcevolumes.values(), [20.0, 100.0])
         
-        s1 = tsample.sourcevolumes.keys()[0]
+        s1 = tsample.sourceIndex()['reagent1'][0]
         s2 = reagent_instances[0]
         self.assert_(s1.plate == s2.plate)
         
@@ -412,6 +412,10 @@ class Test(testing.AutoTest):
         
     
     def test_distributeworklist(self):
+        freference = ['A;R01;;;1;;20;;;\n', 'D;T01;;;10;;20;;;\n', 'W;\n', 
+                      'A;R01;;;1;;40;;;\n', 'D;T01;;;11;;40;;;\n', 'W;\n', 
+                      'A;R02;;;1;;100;;;\n','D;T01;;;10;;100;;;\n','W;\n']
+        
         reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
                      {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
         
@@ -429,8 +433,9 @@ class Test(testing.AutoTest):
         with SampleWorklist(self.fname, reportErrors=True) as wl:
             wl.distributeSamples(tsamples)
         
-        pass
-       
+        fcontent = open(self.fname).readlines()
+        self.assertEqual(fcontent, freference)
+
     
 if __name__ == '__main__':
 

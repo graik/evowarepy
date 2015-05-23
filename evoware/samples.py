@@ -341,8 +341,7 @@ class SampleList(MutableSequence):
     (default: the static instance evoware.plates).
     """
 
-    def __init__(self, data=None, plateindex=E.plates,
-                 converterclass=SampleConverter):
+    def __init__(self, data=None, converter=SampleConverter()):
         """
         @param data: Sequence, list of dict or Sample instances
         @param plateindex: PlateIndex, from which plate instances are looked up
@@ -351,12 +350,10 @@ class SampleList(MutableSequence):
                                method
         """
         super(SampleList, self).__init__()
-        assert isinstance(plateindex, E.PlateIndex)
-        assert issubclass(converterclass, SampleConverter)
+        assert isinstance(converter, SampleConverter)
         
         self._list = []
-        self._plateindex = plateindex
-        self._converter = converterclass(plateindex=plateindex)
+        self._converter = converter
 
         if data:
             for i, val in enumerate(data):
@@ -512,7 +509,7 @@ class Test(testing.AutoTest):
         reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
                      {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
 
-        l = SampleList(reagents, plateindex=E.plates)
+        l = SampleList(reagents)
         
         self.assertEqual(l[0].plate.rackLabel, 'R01')
         self.assertEqual(l[1].plate.rackLabel, 'R02')
