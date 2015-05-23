@@ -13,3 +13,5 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 """Classes related to Excel table parsing and processing"""
+
+from xlsreader import XlsReader

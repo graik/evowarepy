@@ -246,6 +246,16 @@ class Plate(object):
             return False
         raise PlateError, \
               'cannot identify plate by either label or (barcode + type)'
+    
+    def preferredID(self):
+        """
+        @return rackLabel if available, otherwise return barcode
+        @raise PlateError, if neither is available or rackType is missing for
+                           barcode
+        """
+        if self.byLabel():
+            return self.rackLabel
+        return self.barcode
 
 
 ######################
