@@ -47,7 +47,8 @@ setup(
     include_package_data=True,
     scripts = ['evoware/scripts/pcrsetup.py',
                'evoware/scripts/assemblysetup.py',
-               'evoware/scripts/resetfile.py'],
+               'evoware/scripts/resetfile.py',
+               'evoware/scripts/distribute.py'],
 
     classifiers= ['License :: OSI Approved :: Apache Software License',
                   'Topic :: Scientific/Engineering',
