@@ -449,8 +449,9 @@ class TargetIndex(BaseIndex):
         r = self.parseParam(values, keyword='volume')
         if r and not r.keys()[0] in self.source_cols + ['default']:
             raise IndexFileError, \
-                  'volume definition "%s" does not match any source column' %\
-                  r.keys()[0]
+                  ('Volume definition "%s" does not match any source column.' %\
+                  r.keys()[0]) + ('\nExpected source columns are: %r' %\
+                  self.source_cols)
 
         self._volume.update(r)
     
@@ -562,6 +563,9 @@ class Test(testing.AutoTest):
         self.f_primers = F.testRoot('primers.xls')
         self.f_simple = F.testRoot('targetlist.xls')
         self.f_pcr = F.testRoot('targetlist_PCR.xls')
+        
+        self.f_failparts = F.testRoot('partslist_assembly.xlsx')
+        self.f_failtargets = F.testRoot('failtest_targetlist_assembly.xlsx')
     
         self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix="test_cherrypicking_")
     
@@ -611,6 +615,19 @@ class Test(testing.AutoTest):
         cwl.toWorklist(byLabel=True, volume=10)
         
         cwl.close()
+        
+    def test_failtemplate(self):
+        
+        parts = SourceIndex()
+        parts.readExcel(self.f_failparts)
+        
+        def raiseerror():
+            t = TargetIndex(srccolumns=['vector', 'fragment1', 'fragment2', 
+                                    'fragment3', 'fragment4'])
+            t.readExcel(self.f_failtargets)
+        
+        self.assertRaises(IndexFileError, raiseerror)
+        
 
 if __name__ == '__main__':
     
