@@ -617,6 +617,7 @@ class Test(testing.AutoTest):
         cwl.close()
         
     def test_failtemplate(self):
+        """simulate issue #2"""
         
         parts = SourceIndex()
         parts.readExcel(self.f_failparts)
