@@ -234,6 +234,19 @@ import excel as X
 import excel.keywords as K
 
 class DistributionXlsReader(X.XlsReader):
+    """
+    DistributionXlsReader is adding a 'reagents' field to the XlsReader class.
+    (Note: the name could probably be better)
+    
+    Example:
+    >>> reader.reagents = [{'ID': Buffer01', 'plate': 'Reservoir1', 'pos'=1}]
+    
+    Reagents are attempted to be read from @reagent records at the beginning
+    of the Excel document.
+    
+    The reagents list can be converted into a (source) SampleList or can be
+    directly passed on to DistributionConverter.
+    """
     
     def __init__(self, **kwarg):
         super(DistributionXlsReader,self).__init__(**kwarg)
