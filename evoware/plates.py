@@ -42,7 +42,20 @@ class PlateFormat(object):
     Equality and Hashing:
     
     Different PlateFormat instances compare equal if they have the same
-    nx and ny dimensions. PlateFormat instances remain hashable.
+    nx and ny dimensions. This also applies to hashing. If used as dict keys,
+    nx and ny determine whether two PlateFormat instances are considered the
+    same key or not. For example::
+    
+    >>> f1 = PlateFormat(12,8)
+    >>> f2 = PlateFormat(96)
+    >>> f1 == f2
+    True
+    >>> f1 is f2
+    False
+    >>> d = {f1: 'format_1'}
+    >>> d[f2] = 'format 2'
+    >>> d[f1]
+    'format 2'
     """
     
     ex_position = re.compile('([A-Za-z]{0,1})([0-9]+)')
@@ -186,7 +199,9 @@ class Plate(object):
     Alternative equality testing between plate instances. 
 
     As the fields of Plate remain mutable, __eq__ was left untouched so that
-    Plate instances remain hashable (by instance identity). 
+    Plate instances are hashable by instance identity.
+    Instead there is a custom 'isequal' method that compares the content of 
+    Plate instances.
     """
     
     def __init__(self, rackLabel='', barcode='', format=PlateFormat(96),
