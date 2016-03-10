@@ -39,6 +39,8 @@ class PlateFormat(object):
     >>> f.int2human(96)
     'H12'
     
+    Equality and Hashing:
+    
     Different PlateFormat instances compare equal if they have the same
     nx and ny dimensions. PlateFormat instances remain hashable.
     """
