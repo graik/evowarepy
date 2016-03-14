@@ -9,7 +9,7 @@ import evoware.util as U
 import evoware.fileutil as F
 import evoware.dialogs as D
 
-import evoware.sampleworklists as W
+import evoware.sampleworklist as W
 import evoware.samples as S
 
 def _use( options ):
