@@ -1,5 +1,6 @@
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved"""Base Parser for Excel tables"""
+##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+"""Base Parser for Excel tables"""
 
 import evoware as E
 from evoware import fileutil as F

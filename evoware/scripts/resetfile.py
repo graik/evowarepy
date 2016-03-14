@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved"""Reset a (worklist) file to empty; or create an empty file."""
+##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+"""Reset a (worklist) file to empty; or create an empty file."""
 
 import sys, os
 

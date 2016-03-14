@@ -1,5 +1,6 @@
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved"""Provides static instance 'plates' which maps IDs to plate instances"""
+##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+"""Provides static instance 'plates' which maps IDs to plate instances"""
 
 from evoware import PlateFormat, PlateError, Plate
 

@@ -1,5 +1,6 @@
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved"""microplate format handling"""
+##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+"""microplate format handling"""
 
 import numpy as N
 import re, string
