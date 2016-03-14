@@ -289,7 +289,7 @@ class SampleWorklist(W.Worklist):
         
         return keys
     
-    def distributeSamples(self, targetsamples, reagentkeys=()):
+    def distributeSamples(self, targetsamples, reagentkeys=(), wash=True):
         """
         @param targetsamples: [ TargetSample ], destination positions with 
                               reference to source samples and source volumes
@@ -306,7 +306,7 @@ class SampleWorklist(W.Worklist):
                 srcsample, vol = tsample.sourceIndex().get(k, (None, None))
                 
                 if srcsample and vol:
-                    self.transferSample(srcsample, tsample, vol)
+                    self.transferSample(srcsample, tsample, vol, wash=wash)
 
 
 ######################
@@ -420,6 +420,10 @@ class Test(testing.AutoTest):
                       'A;R01;;;1;;40;;;\n', 'D;T01;;;11;;40;;;\n', 'W;\n', 
                       'A;R02;;;1;;100;;;\n','D;T01;;;10;;100;;;\n','W;\n']
         
+        freference2= ['A;R01;;;1;;20;;;\n', 'D;T01;;;10;;20;;;\n', 
+                      'A;R01;;;1;;40;;;\n', 'D;T01;;;11;;40;;;\n',
+                      'A;R02;;;1;;100;;;\n','D;T01;;;10;;100;;;\n']
+        
         reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
                      {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
         
@@ -436,9 +440,15 @@ class Test(testing.AutoTest):
         
         with SampleWorklist(self.f_worklist, reportErrors=True) as wl:
             wl.distributeSamples(tsamples)
-        
         fcontent = open(self.f_worklist).readlines()
         self.assertEqual(fcontent, freference)
+
+        with SampleWorklist(self.f_worklist, reportErrors=True) as wl:
+            wl.distributeSamples(tsamples, wash=False)
+    
+        fcontent = open(self.f_worklist).readlines()
+        self.assertEqual(fcontent, freference2)
+
 
     def test_distributionxlsreader(self):
         xls = DistributionXlsReader()
