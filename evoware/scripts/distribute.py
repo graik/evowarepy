@@ -11,6 +11,8 @@ import evoware.dialogs as D
 
 import evoware.sampleworklist as W
 import evoware.samples as S
+import evoware.excel as X
+import evoware.sampleconverters as C
 
 def _use( options ):
     print """
@@ -85,16 +87,28 @@ def cleanOptions( options ):
     options['useLabel'] = 'barcode' not in options
     return options
 
+def _testing(options):
+    import evoware.fileutil as F
+    options['i'] = F.testRoot('distribution.xls')
+    options['o'] = F.testRoot('test.gwl')
+    options['columns'] = ['buffer01']
+    return options    
+
 ###########################
 # MAIN
 ###########################
 import evoware as E
+TESTING = True
 
 try:
-    if len(sys.argv) < 2:
-        _use( _defaultOptions() )
-        
-    options = U.cmdDict( _defaultOptions() )
+    options = _defaultOptions()
+    if TESTING:
+        options = _testing(options)
+    else:
+        if len(sys.argv) < 2:
+            _use( _defaultOptions() )
+            
+        options = U.cmdDict( _defaultOptions() )
     
     try:
         options = cleanOptions(options) 
@@ -102,27 +116,27 @@ try:
         logging.error('missing option: ' + why)
         _use(options)
     
-    xls = W.DistributionXlsReader(byLabel=options['useLabel'])
+    xls = X.DistributionXlsReader(byLabel=options['useLabel'])
     xls.read(options['i'])
 
     reagents = xls.reagents
     
     if 'src' in options:
-        srcxls = E.excel.XlsReader(byLabel=options['useLabel'])
+        srcxls = X.XlsReader(byLabel=options['useLabel'])
         srcxls.read( options['f'] )
         reagents = S.SampleList(srcxls.rows)
         
     columns = options['columns']
     
-    converter = W.DistributionConverter(reagents=reagents, sourcefields=columns)
+    converter = C.DistributionConverter(reagents=reagents, sourcefields=columns)
     
     targets = S.SampleList(xls.rows, converter=converter)
     
-    with W.SampleWorklist(options['o'], reportErrors=True) as wl:
+    with W.SampleWorklist(options['o'], reportErrors=options['dialogs']) as wl:
         wl.distributeSamples(targets)
 
 except Exception, why:
-    if 'dialogs' in options:
+    if options['dialogs']:
         D.lastException('Error generating Worklist')
     else:    
         raise
