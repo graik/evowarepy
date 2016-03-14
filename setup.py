@@ -50,7 +50,7 @@ setup(
                'evoware/scripts/resetfile.py',
                'evoware/scripts/distribute.py'],
 
-    classifiers= ['License :: OSI Approved :: Apache Software License',
+    classifiers= ['License :: Other/Proprietary License',
                   'Topic :: Scientific/Engineering',
                   'Programming Language :: Python',
                   'Operating System :: OS Independent',
