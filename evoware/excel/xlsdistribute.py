@@ -5,11 +5,11 @@
 ##from numbers import Number
 ##
 ##import evoware.worklist as W
-import evoware.samples as S
+##import evoware.samples as S
 ##from evoware.targetsample import TargetSample
 import evoware as E
 
-import evoware.excel as X
+import xlsreader as X
 import keywords as K
 
 class DistributionXlsReader(X.XlsReader):
@@ -76,6 +76,8 @@ class Test(testing.AutoTest):
     
     def test_distributionxlsreader(self):
         from evoware.sampleconverters import DistributionConverter
+        import evoware.samples as S
+        
         xls = DistributionXlsReader()
         xls.read(self.f_xls)
         

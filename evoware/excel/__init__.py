@@ -3,3 +3,4 @@
 """Classes related to Excel table parsing and processing"""
 
 from xlsreader import XlsReader
+from xlsdistribute import DistributionXlsReader
