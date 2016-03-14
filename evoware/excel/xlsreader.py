@@ -176,28 +176,46 @@ class XlsReader(object):
 
         return {}
     
+    def parseFormatParam(self, values, keyword=K.plateformat):
+        if values:
+            v0 = values[0]
+    
+            if v0 and isinstance(v0, basestring) and v0.lower() == keyword:
+                try:
+                    key = unicode(values[1]).strip()
+                    r = {'ID':key, 'wells':values[2]}
+                    if len(values) > 3:
+                        r['racktype'] = unicode(values[3]).strip()
+                    else:
+                        r['racktype'] = None
+                    return r
+                except Exception, error:
+                    raise ExcelFormatError, 'cannot parse format record: %r' \
+                          % values
+        return {}
+
     def parsePlateformat(self, values):
         """
         Extract special plate format parameter from header row starting
         with 'format'.
         @return {plateID : Plate}, or empty dict
         """
-        r = self.parseParam(values, keyword=K.plateformat)
+        r = self.parseFormatParam(values, keyword=K.plateformat)
         if not r:
             return r
-
-        plateid, wells = r.items()[0]
+        
+        plateid = r['ID']
         
         if self.byLabel:
-            kwargs = {'rackLabel':plateid}
+            kwargs = {'rackLabel':plateid,
+                      'rackType': r['racktype'] or self.defaultRackType}
         else:
-            kwargs = {'barcode':plateid, 'rackType':self.defaultRackType}
+            kwargs = {'barcode':plateid, 
+                      'rackType': r['racktype'] or self.defaultRackType}
         
-        plate = Plate(format=PlateFormat(wells), **kwargs)
+        plate = Plate(format=PlateFormat(r['wells']), **kwargs)
             
-        r[plateid] = plate
-
-        return r
+        return {plateid: plate}
     
 
     def parsePreHeader(self, values):
@@ -244,23 +262,23 @@ class XlsReader(object):
                 values = [ v for v in sheet.row_values(row) if v ] 
                 self.parsePreHeader(values)
                 row += 1
-
+    
             ## parse table "header"
             keys = self.parseHeader(values)
-
+    
             i = 0
             for row in range(row, sheet.nrows):
                 values = sheet.row_values(row) 
-
+    
                 ## ignore rows with empty first column
                 if values[0]:
                     d = dict( zip( keys, values ) ) 
                     self.cleanEntry(d)
                     self.addEntry(d)
                     i += 1
-
+    
             return i
-
+    
         except ExcelFormatError, why:
             raise ExcelFormatError, 'Invalid Excel file (could not find header).'
 
@@ -308,6 +326,7 @@ class Test(testing.AutoTest):
         self.f_primers = F.testRoot('primers.xls')
         self.f_simple = F.testRoot('targetlist.xls')
         self.f_pcr = F.testRoot('targetlist_PCR.xls')
+        self.f_distribute = F.testRoot('distribution.xls')
 
     def cleanUp(self):
         """Called after all tests"""
@@ -335,3 +354,10 @@ class Test(testing.AutoTest):
         
         self.assertEqual(E.plates['SB11'].rackType, '384 Well Microplate')
         self.assertEqual(E.plates['SB11'].barcode, 'SB11')
+
+    def test_customFormat(self):
+        self.r3 = XlsReader()
+        self.r3.read(self.f_distribute)
+        
+        self.assertEqual(E.plates['reservoirA'].rackType, 'Trough 100ml')
+        
