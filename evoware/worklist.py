@@ -13,65 +13,63 @@ class Worklist(object):
     """
     Basic Evoware worklist generator.
     
-    Preferred usage is to wrap it in a ``with`` statement:
+    Preferred usage is to wrap it in a ``with`` statement::
     
-    >>> with Worklist('outputfile.gwl') as wl:
+        with Worklist('outputfile.gwl') as wl:
             wl.A('src1', 1, 140)
             wl.D('dst1', 1, 140)
     
-    This will ensure that the file handle is properly opened and closed,
-    no matter how the code exits. If the with block exits through an
-    exception, this exception will be reported to the user in an Error
-    dialog box (can be switched off with Worklist(fname, reportErrors=False)).
+    This will ensure that the file handle is properly opened and closed, no
+    matter how the code exits. If the with block exits through an exception,
+    this exception will be reported to the user in an Error dialog box (can
+    be switched off with ``Worklist(fname, reportErrors=False)``).
     
     Alternatively, create the object in a normal fashion and call the close()
-    method yourself:
+    method yourself::
     
-    >>> wl = Worklist('outputfile.gwl')
+        wl = Worklist('outputfile.gwl')
         try:
             wl.A('src1', 1, 140)
             wl.D('dst1', 1, 140)
         finally:    
             wl.close()
 
-    The file (handle) will be created and opened only with the first "write" 
-    statement (wl.A() in the above example). There are two properties:
+    The file (handle) will be created and opened only with the first ``write`` 
+    statement (``wl.A()`` in the above example). There are two properties:
     
-    * f -- gives access to the writable file handle (a readonly property,
-            first access will create and open the file)
+        * f -- gives access to the writable file handle (a readonly property,
+          first access will automatically create and open the file)
     
-    * plateformat -- read or modify the number of wells per plate (default: 96)
-                   this parameter is used to calculate positions and number
-                   of wells in the transferColumn method
+        * plateformat -- read or modify the number of wells per plate
+          (default: 96) this parameter is used to calculate positions and
+          number of wells in the transferColumn method
 
-    Worklist methods -- overview:
-    =============================
+    **Methods Overview:**
     
-    aspirate -- generate a single aspirate line
-    A -- shortcut expecting only labware, well and volume as parameters
+    * :func:`aspirate` -- generate a single aspirate line
+    * :func:`A` -- shortcut expecting only labware, well and volume as parameters
+
+    * :func:`dispense` -- generate a single dispense line
+    * :func:`D` -- shortcut expecting only labware, well and volume (plus optional wash)
+
+    * :func:`distribute` -- generate a reagent distribute command (R)
+
+    * :func:`transfer` -- generate two lines (plus optional wash/tip change) for
+      aspiration and dispense of the same volume
+            
+    * :func:`transferColumn` -- generate an aspirate and a dispense command for each
+      well in a given column (Note: replace this by R?)
+
+    * :func:`wash` -- insert wash / tip replacement statement
+    * :func:`flush` -- insert flush statement
+    * :func:`B` -- insert break statement (B)
+    * :func:`comment` -- insert a comment
+
+    * :func:`write` -- write a custom string to the worklist file
     
-    dispense -- generate a single dispense line
-    D -- shortcut expecting only labware, well and volume (plus optional wash)
+    **Worklist examples**::
     
-    distribute -- generate a reagent distribute command (R)
-    
-    transfer -- generate two lines (plus optional wash/tip change) for
-                aspiration and dispense of the same volume
-    
-    transferColumn -- generate an aspirate and a dispense command for each
-                      well in a given column (Note: replace this by R?)
-    
-    wash -- insert wash / tip replacement statement
-    flush -- insert flush statement
-    B -- insert break statement (B)
-    comment -- insert a comment
-    
-    write -- write a custom string to the worklist file
-    
-    Worklist examples:
-    ==================
-    
-    >>> with Worklist('transfer_plate.gwl') as wl:
+        with Worklist('transfer_plate.gwl') as wl:
 
             for i in range(1,13):
                 wl.transferColumn('plateSrc', i, 'plateDst', i, 120, wash=True)
@@ -81,42 +79,48 @@ class Worklist(object):
             wl.aspirate(rackLabel='Src1', position=1, volume=25)
             wl.dispense(rackLabel='Dst1', position=96, volume=25)
         
-    The above example copies 120 ul from every well of every column of the 
+    The above example copies 120 ul from every well of every column of the
     plate with labware label "plateSrc" to the same well in plate "plateDst".
-    The tips are replaced after each dispense (W;).
-    Afterwards, a break command is inserted (B;) and a single aspiration and
-    dispense transfers 25 ul from plate Src1, A1 to plate Dst1, well H8; 
-    again followed by a 'W;' command for tip replacement.
+    The tips are replaced after each dispense (W;). Afterwards, a break
+    command is inserted (B;) and a single aspiration and dispense transfers
+    25 ul from plate Src1, A1 to plate Dst1, well H8; again followed by a
+    'W;' command for tip replacement.
     
-    These last two lines can be simplified to:
-    >>> wl.A('Src1', 1, 25)
+    These last two lines can be simplified to::
+    
+        wl.A('Src1', 1, 25)
         wl.D('Dst1', 96, 25)
         
-    A() and D() are "shortcuts" for the aspirate and dispense methods but only
-    accept the three core label / position / volume parameters.
+    ``A()`` and ``D()` are "shortcuts" for the aspirate and dispense methods
+    but only accept the three core label / position / volume parameters.
     
     These two lines can be further simplified to a single method call:
+    
     >>> wl.transfer('Src1', 1, 'Dst1', 96, 25)
     
     ... which will generate the same two worklist commands plus the "wash" 
     (W;) command.
         
     'W;' is added by default, after each dispense command. This behaviour can
-    be switched off by passing `wash=False` to dispense(), D(), or transfer().
+    be switched off by passing ``wash=False`` to ``dispense()``, ``D()``, or
+    ``transfer()``.
     
-    Other methods:
-    ==============
+    **Other methods:**
    
     Wash and flush commands can be inserted manually by calling:
+    
     >>> wl.wash()
     >>> wl.flush()
     
     Comments can be added like this:
+    
     >>> wl.comment('This is a comment')
+    
     ... which results in a worklist line: "C; This is a comment"
     
     Last not least, any other custom worklist command can be inserted as
-    a raw string using the write method:
+    a raw string using the ``write`` method:
+    
     >>> wl.write('C; This is a random comment')
     
     Worklist.write will check your input for line breaks, remove any of them

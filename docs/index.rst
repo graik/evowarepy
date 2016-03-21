@@ -10,7 +10,9 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-
+   
+   evoware.worklist
+   evoware.excel
 
 
 Indices and tables
