@@ -13,6 +13,9 @@ class Worklist(object):
     """
     Basic Evoware worklist generator.
     
+       .. Sphinx/Rst configuration
+       .. default-role:: any
+
     Preferred usage is to wrap it in a ``with`` statement::
     
         with Worklist('outputfile.gwl') as wl:
@@ -46,26 +49,26 @@ class Worklist(object):
 
     **Methods Overview:**
     
-    * :func:`aspirate` -- generate a single aspirate line
-    * :func:`A` -- shortcut expecting only labware, well and volume as parameters
+    * :func:`~evoware.worklist.Worklist.aspirate` -- generate A single aspirate line
+    * :any:`A()` -- shortcut expecting only labware, well and volume as parameters
 
-    * :func:`dispense` -- generate a single dispense line
-    * :func:`D` -- shortcut expecting only labware, well and volume (plus optional wash)
+    * `dispense()` -- generate a single dispense line
+    * `D()` -- shortcut expecting only labware, well and volume (plus optional wash)
 
-    * :func:`distribute` -- generate a reagent distribute command (R)
+    * `distribute()` -- generate a reagent distribute command (R)
 
-    * :func:`transfer` -- generate two lines (plus optional wash/tip change) for
+    * `transfer()` -- generate two lines (plus optional wash/tip change) for
       aspiration and dispense of the same volume
             
-    * :func:`transferColumn` -- generate an aspirate and a dispense command for each
+    * `transferColumn()` -- generate an aspirate and a dispense command for each
       well in a given column (Note: replace this by R?)
 
-    * :func:`wash` -- insert wash / tip replacement statement
-    * :func:`flush` -- insert flush statement
-    * :func:`B` -- insert break statement (B)
-    * :func:`comment` -- insert a comment
+    * `wash()` -- insert wash / tip replacement statement
+    * `flush()` -- insert flush statement
+    * `B()` -- insert break statement (B)
+    * `comment()` -- insert a comment
 
-    * :func:`write` -- write a custom string to the worklist file
+    * `write()` -- write a custom string to the worklist file
     
     **Worklist examples**::
     
@@ -91,7 +94,7 @@ class Worklist(object):
         wl.A('Src1', 1, 25)
         wl.D('Dst1', 96, 25)
         
-    ``A()`` and ``D()` are "shortcuts" for the aspirate and dispense methods
+    ``A()`` and ``D()`` are "shortcuts" for the aspirate and dispense methods
     but only accept the three core label / position / volume parameters.
     
     These two lines can be further simplified to a single method call:
@@ -125,14 +128,19 @@ class Worklist(object):
     
     Worklist.write will check your input for line breaks, remove any of them
     and then add a standard line break as required by worklists. That means,
-    you don't need to add a line break to the input string.    
+    you don't need to add a line break to the input string.
+  
+    .. raw:: html
+    
+        <br><hr><h3>Detailed Method Documentation</h3>
     """    
    
     def __init__(self, fname, reportErrors=True):
         """
-        @param fname - str, file name for output worklist (will be created)
-        @param reportErrors - bool, report certain exceptions via dialog box
-                              to user [True]
+        :param fname: file name for output worklist (will be created)
+        :param reportErrors: report exceptions via dialog box to user [True]
+        :type fname: str
+        :type reportErrors: bool
         """
         self.fname = F.absfile(fname)
         self._f = None  ## file handle
@@ -156,7 +164,7 @@ class Worklist(object):
     def close(self):
         """
         Close file handle. This method will be called automatically by 
-        __del__ or the with statement.
+        ``__del__`` or the ``with`` statement.
         """
         if self._f:
             self._f.close()
@@ -182,15 +190,15 @@ class Worklist(object):
                  liquidClass='', tipMask=None):
         """
         Generate a single aspirate command. Required parameters are:
-        @param rackLabel or rackID - str, source rack label or barcode ID
-        @param position - int, well position (default:1)
-        @param volume - int, volume in ul
+        :param rackLabel or rackID - str, source rack label or barcode ID
+        :param position - int, well position (default:1)
+        :param volume - int, volume in ul
         
         Optional parameters are:
-        @param rackType - str, validate that rack has this type
-        @param tubeID - str, tube bar code
-        @param liquidClass - str, alternative liquid class
-        @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
+        :param rackType - str, validate that rack has this type
+        :param tubeID - str, tube bar code
+        :param liquidClass - str, alternative liquid class
+        :param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
         """
         if not (rackLabel or (rackID and rackType)):
             raise WorklistException, \
@@ -206,11 +214,18 @@ class Worklist(object):
     def A(self, rackID, position, volume, byLabel=False, rackType=''):
         """
         aspirate shortcut with only the three core parameters
-        @param rackID - str, source labware ID (or rack ID if labware lacks ID)
-        @param position - int, source well position
-        @param volume - int, aspiration volume
-        @param byLabel - bool, use rack label instead of labware / rack ID
-        @param rackType - str, labware type, required when using ID
+
+        :param rackID: source labware ID (or rack ID if labware lacks ID)
+        :param position: source well position
+        :param volume: aspiration volume
+        :param byLabel: use rack label instead of labware / rack ID
+        :param rackType: labware type, required when using ID
+
+        :type rackID: `str`
+        :type position: ``int``
+        :type volume: ``int`` 
+        :type byLabel: ``bool``
+        :type rackType: ``str``
         """
         if not byLabel:
             self.aspirate(rackID=rackID, position=position, volume=volume,
@@ -224,18 +239,18 @@ class Worklist(object):
                  liquidClass='', tipMask=None, wash=True):
         """
         Generate a single dispense command. Required parameters are:
-        @param rackLabel or rackID - str, source rack label or barcode ID
-        @param position - int, well position (default:1)
-        @param volume - int, volume in ul
+        :param rackLabel or rackID - str, source rack label or barcode ID
+        :param position - int, well position (default:1)
+        :param volume - int, volume in ul
         
         Optional parameters are:
-        @param rackType - str, validate that labware has this type
-        @param tubeID - str, tube bar code
-        @param liquidClass - str, alternative liquid class
-        @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
+        :param rackType - str, validate that labware has this type
+        :param tubeID - str, tube bar code
+        :param liquidClass - str, alternative liquid class
+        :param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
         
         Tip-handling:
-        @param wash - bool, include 'W' statement for tip replacement after
+        :param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
         """
         if not (rackLabel or (rackID and rackType)):
@@ -255,13 +270,20 @@ class Worklist(object):
     def D(self, rackID, position, volume, wash=True, byLabel=False, rackType=''):
         """
         dispense shortcut with only the three core parameters
-        @param rackID - str, dest. labware ID (or rack ID if labware lacks ID)
-        @param position - int, destination well position
-        @param volume - int, aspiration volume
-        @param wash - bool, include 'W' statement for tip replacement after
+        
+        .. remove ugly whitespace around list in custom CSS:
+        .. http://stackoverflow.com/questions/7759229/remove-space-between-paragraph-and-unordered-list
+        Args:
+        
+            * rackID (str): dest. labware ID (or rack ID if labware lacks ID)
+            * position (int): destination well position
+            * volume (int): aspiration volume
+        
+        KwArgs:
+            * wash (bool): include 'W' statement for tip replacement after
                       dispense (default: True)
-        @param byLabel - bool, use rack label instead of labware/rack ID [False]
-        @param rackType - str, labware type, required when using ID
+            * byLabel (bool): use rack label instead of labware/rack ID [False]
+            * rackType (str): labware type, required when using ID
         """
         if not byLabel:
             self.dispense(rackID=rackID, position=position, volume=volume,
@@ -281,26 +303,26 @@ class Worklist(object):
         Generate a Reagent Distribution command (R). 
         
         Required parameters:
-        @param srcRackID or srcRackLabel - str, source barcode or rack label
-        @param srcPosStart - int, source starting well position (default:1)
-        @param srcPosEnd - int, source ending well position (default:96)
+        :param srcRackID or srcRackLabel - str, source barcode or rack label
+        :param srcPosStart - int, source starting well position (default:1)
+        :param srcPosEnd - int, source ending well position (default:96)
 
-        @param dstRackID or dstRackLabel - str, destination barcode or rack label
-        @param dstPosStart - int, destination starting well position (default:1)
-        @param dstPosEnd - int, destination ending well position (default:96)
+        :param dstRackID or dstRackLabel - str, destination barcode or rack label
+        :param dstPosStart - int, destination starting well position (default:1)
+        :param dstPosEnd - int, destination ending well position (default:96)
 
-        @param volume - int, volume in ul
+        :param volume - int, volume in ul
         
         Optional parameters are:
-        @param srcRackType - str, validate that source rack has this type
-        @param dstRackType - str, validate that destination rack has this type
-        @param liquidClass - str, alternative liquid class
+        :param srcRackType - str, validate that source rack has this type
+        :param dstRackType - str, validate that destination rack has this type
+        :param liquidClass - str, alternative liquid class
         
-        @param nDitiReuses - int, (default:1, no DiTi re-use)
-        @param nMultiDisp - int, (default:1, no multi-dispensing)
-        @direction - int, pipetting direction (default:0 from left to right)
+        :param nDitiReuses - int, (default:1, no DiTi re-use)
+        :param nMultiDisp - int, (default:1, no multi-dispensing)
+        :param direction - int, pipetting direction (default:0 from left to right)
         
-        @param exlcudeWells - [int], list of destination wells to skip []
+        :param exlcudeWells - [int], list of destination wells to skip []
         """
         if not (srcRackLabel or (srcRackID and srcRackType)):
             raise WorklistException, \
@@ -328,16 +350,16 @@ class Worklist(object):
     def transfer(self, srcID, srcPosition, dstID, dstPosition, volume,
                  wash=True, byLabel=False, srcRackType='', dstRackType=''):
         """
-        @param srcID - str, source labware ID (or rack label if missing)
-        @param srcPosition - int, source well position
-        @param dstID - str, destination labware ID (or rack label if missing)
-        @param dstPosition - int, destination well position
-        @param volume - int, aspiration volume
-        @param wash - bool, include 'W' statement for tip replacement after
+        :param srcID - str, source labware ID (or rack label if missing)
+        :param srcPosition - int, source well position
+        :param dstID - str, destination labware ID (or rack label if missing)
+        :param dstPosition - int, destination well position
+        :param volume - int, aspiration volume
+        :param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
-        @param byLabel - bool, use rack label instead of labware/rack ID [False]
-        @param srcRackType - str, labware type, required when byLabel==False
-        @param dstRackType - str, labware type, required when byLabel==False
+        :param byLabel - bool, use rack label instead of labware/rack ID [False]
+        :param srcRackType - str, labware type, required when byLabel==False
+        :param dstRackType - str, labware type, required when byLabel==False
         """
         self.A(srcID, srcPosition, volume, byLabel=byLabel, rackType=srcRackType)
         self.D(dstID, dstPosition, volume, wash=wash, byLabel=byLabel, 
@@ -350,21 +372,21 @@ class Worklist(object):
                        byLabel=False, srcRackType='', dstRackType=''):
         """
         Generate Aspirate & Dispense commands for a whole plate column
-        @param srcID - str, source labware ID (or rack label)
-        @param srcCol - int, column on source plate
-        @param dstID - str, destination labware ID (or rack label)
-        @param dstCol - int, column on destination plate
-        @param volume - int, aspiration / dispense volume
-        @param plateformat - PlateFormat, default: 96-well layout
-        @param liquidClass - str, alternative liquid class
-        @param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
-        @param wash - bool, include 'W' statement for tip replacement after
+        :param srcID - str, source labware ID (or rack label)
+        :param srcCol - int, column on source plate
+        :param dstID - str, destination labware ID (or rack label)
+        :param dstCol - int, column on destination plate
+        :param volume - int, aspiration / dispense volume
+        :param plateformat - PlateFormat, default: 96-well layout
+        :param liquidClass - str, alternative liquid class
+        :param tipMask - int, alternative tip mask (1 - 128, 8 bit encoded)
+        :param wash - bool, include 'W' statement for tip replacement after
                       dispense (default: True)
-        @param byLabel - bool, use rack label instead of labware/rack ID [False]
-        @param srcRackType - str, labware type, required when byLabel==False
-        @param dstRackType - str, labware type, required when byLabel==False
+        :param byLabel - bool, use rack label instead of labware/rack ID [False]
+        :param srcRackType - str, labware type, required when byLabel==False
+        :param dstRackType - str, labware type, required when byLabel==False
         
-        @return n - int, number of aspiration / dispense pairs written
+        :return n - int, number of aspiration / dispense pairs written
         """
         rows = plateformat.ny
         pos_src = (srcCol - 1) * rows + 1
@@ -395,7 +417,7 @@ class Worklist(object):
                           wash=True, flush=True):
         """
         
-        @param wash - bool, replace tip *after* all multi-dispense actions.
+        :param wash - bool, replace tip *after* all multi-dispense actions.
 
         """
         n_dispense = len(dstPos)

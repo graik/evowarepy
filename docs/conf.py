@@ -111,7 +111,9 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+## http://www.sphinx-doc.org/en/stable/theming.html#builtin-themes
 html_theme = 'agogo'
+html_theme_options = {}
 #html_theme = 'pyramid'
 
 # Theme options are theme-specific and customize the look and feel of a theme
