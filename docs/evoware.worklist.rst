@@ -9,5 +9,5 @@ imported directly from the evoware package namespace::
 
 .. autoclass:: evoware.worklist.Worklist
     :members:
-    :undoc-members:
+    :special-members: __init__
     :show-inheritance:

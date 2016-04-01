@@ -23,3 +23,9 @@ plates = PlateIndex()
 
 from cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 
+## documentation hints:
+## * napoleon sphinx extension for readable docstrings: 
+##   http://www.sphinx-doc.org/en/stable/ext/napoleon.html
+## * .. default-role:: any
+##   activates much more convenient ref / linking to methods and classes
+

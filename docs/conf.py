@@ -82,7 +82,7 @@ exclude_patterns = ['_build']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-#default_role = None
+default_role = 'any'   ## enables easy cross-referencing by simple method name
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -113,9 +113,9 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 ## http://www.sphinx-doc.org/en/stable/theming.html#builtin-themes
-html_theme = 'agogo'
+##html_theme = 'agogo'
 html_theme_options = {}
-#html_theme = 'pyramid'
+html_theme = 'pyramid'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -289,3 +289,6 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+## custom additions
+autodoc_member_order = 'bysource'
