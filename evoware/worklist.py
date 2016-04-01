@@ -11,7 +11,7 @@ class WorklistException( Exception ):
 
 class Worklist(object):
     """
-    Basic Evoware worklist generator.
+    Low-level Evoware worklist generator.
     
     Preferred usage is to wrap it in a ``with`` statement::
     
