@@ -37,12 +37,12 @@ class Worklist(object):
     The file (handle) will be created and opened only with the first ``write`` 
     statement (``wl.A()`` in the above example).
     
-    **Properties**:
+    **Properties:**
     
         * `f` -- gives access to the writable file handle (a readonly property,
           first access will automatically create and open the file)
     
-    **Methods overview**:
+    **Methods:**
     
         * :func:`~evoware.worklist.Worklist.aspirate` -- generate A single aspirate line
         * :any:`A()` -- shortcut expecting only labware, well and volume as parameters
@@ -125,10 +125,6 @@ class Worklist(object):
         `Worklist.write` will check your input for line breaks, remove any of them
         and then add a standard line break as required by worklists. That means,
         you don't need to add a line break to the input string.
-      
-    .. raw:: html
-    
-        <br><hr><h2>Detailed Method Documentation</h2>
     """    
    
     def __init__(self, fname, reportErrors=True):

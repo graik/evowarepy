@@ -12,7 +12,7 @@ Contents:
    :maxdepth: 2
    
    evoware.worklist
-   evoware.excel
+   evoware.samples
 
 
 Indices and tables

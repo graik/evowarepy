@@ -6,7 +6,8 @@ import targetsample as TS
 
 class SampleWorklist(W.Worklist):
     """
-    High-level worklist operating on TargetSample instances. 
+    High-level worklist operating on `S.Sample` and
+    `TS.TargetSample` instances.
     """
     
     def transferSample(self, src, dst, volume, wash=True ):
