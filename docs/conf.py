@@ -96,7 +96,7 @@ default_role = 'any'   ## enables easy cross-referencing by simple method name
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-## Note the sphinx_rtd_theme ignores this setting. Workaround:
+## Note the sphinx_rtd_theme by default ignores this setting. Workaround:
 ## https://github.com/snide/sphinx_rtd_theme/issues/166
 pygments_style = 'friendly'
 
