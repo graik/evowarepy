@@ -15,13 +15,13 @@ project_root = osp.abspath( osp.split( osp.abspath(__file__) )[0] )
 sys.path.append( osp.join( project_root, 'thirdparty'))
 
 ## Import main classes into package name space for convenience
-from evotask import EvoTask
-from worklist import Worklist, WorklistException
-from plates import PlateFormat, PlateError, Plate
-from plateindex import PlateIndex, PlateIndexError
+from evoware.evotask import EvoTask
+from evoware.worklist import Worklist, WorklistException
+from evoware.plates import PlateFormat, PlateError, Plate
+from evoware.plateindex import PlateIndex, PlateIndexError
 plates = PlateIndex()
 
-from cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
+from evoware.cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 
 ## documentation hints:
 ## * napoleon sphinx extension for readable docstrings: 

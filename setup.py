@@ -42,7 +42,7 @@ setup(
     provides=['evoware'],
 
     ## available on PyPi
-    install_requires=['xlrd'],
+    install_requires=['xlrd','numpy','sphinx','sphinx_rtd_theme'],
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
     scripts = ['evoware/scripts/pcrsetup.py',
