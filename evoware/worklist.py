@@ -2,6 +2,8 @@
 ##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
 """Generate Evoware pipetting worklists"""
 
+__all__ = ['Worklist', 'WorklistException']  ## result of `import *`
+
 import fileutil as F
 import dialogs as D
 import plates as P
@@ -557,7 +559,6 @@ class Test(testing.AutoTest):
                           nDitiReuses=2, nMultiDisp=12, 
                           excludeWells=[1,96] )
 
-    
 
 if __name__ == '__main__':
 
