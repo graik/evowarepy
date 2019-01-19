@@ -1,0 +1,7 @@
+{# Import the theme's layout. #}
+{# fix RTDs habit of ignoring alternative syntax highlighting #}
+{# https://github.com/snide/sphinx_rtd_theme/issues/166 #}
+
+{% extends "!layout.html" %}
+
+{% set css_files = css_files + ['_static/pygments.css'] %}

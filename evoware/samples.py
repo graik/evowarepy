@@ -29,75 +29,79 @@ def intfloat2int(x):
 
 class Sample(object):
     """
-    Representation of a single well / sample. 
+    Representation of a single well / sample.
     
     Sample is considered immutable. All sub-fields have to be specified via
     the constructor and are then available as read-only properties.
     
-    Properties
+    For convenience, Sample can be imported directly from the evoware package
+    name space:: 
+        from evoware import Sample
+
+    *Properties:*
     
-    * id - str, main sample ID 
-    * subid - str, secondary ID to, e.g., distinguish replicas and clones
-    * fullid - str, gives id#subid if there is a subid, else just id.
-    
-    * plate - a evoware.Plate instance
-    * plateformat - shortcut to the plate's PlateFormat (row:column dimensions)
-    * plateid - shortcut to plate.rackLabel *or* plate.barcode
-    
-    * position - int, well position, e.g. number 1 to 96
-    * position2D - str, human readable well position (e.g. 'A1')
-    
-    Usage:
-    
-    >>> s = Sample('BBa1000#a', plate=Plate('plateA'), pos='B1')
-    is the same as:
-    >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)
-    and results in:
-    >>> s.id
-       'BBa1000'
-    >>> s.subid
-       'a'
-    >>> s.fullid
-       'BBa1000#a'
-    >>> s.plateformat
-       PlateFormat(96)
-    >>> s.plateid
-       'plateA'
-    
-    Arbitrary additional fields can be given as keyword arguments to the
-    constructor:
-    >>> s = Sample('BBa2000#1', plate=Plate('plateB'), pos=1, temperature=25)
-    
-    ...results in an additional 'temperature' field:
-    >>> s.temperature
-        25
+        * `id` - str, main sample ID 
+        * `subid` - str, secondary ID to, e.g., distinguish replicas and clones
+        * `fullid` - str, gives id#subid if there is a subid, else just id.
         
-    Equality and hashing:
+        * `plate` - a `Plate` instance
+        * `plateformat` - shortcut to the plate's PlateFormat (row:column dimensions)
+        * `plateid` - shortcut to plate.rackLabel *or* plate.barcode
+        
+        * `position` - int, well position, e.g. number 1 to 96
+        * `position2D` - str, human readable well position (e.g. 'A1')
     
-    ID + subID + plate + position determine the identity of a sample:
+    *Usage:*
     
-    >>> s1 = Sample('s1', 'a', 'plateA', 1)
-    >>> s2 = Sample('s1#a', plate=evoware.plates['plateA'], pos='A1')
-    >>> s1 == s2
-    True
-    >>> s1 is s2
-    False
+            >>> s = Sample('BBa1000#a', plate=Plate('plateA'), pos='B1')
+        is the same as:
+            >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)
+        and results in:
+            >>> s.id
+               'BBa1000'
+            >>> s.subid
+               'a'
+            >>> s.fullid
+               'BBa1000#a'
+            >>> s.plateformat
+               PlateFormat(96)
+            >>> s.plateid
+               'plateA'
     
-    >>> d = {s1 : 'some value'}
-    >>> d[s2] == 'some value'
-    True
+        Arbitrary additional fields can be given as keyword arguments to the
+        constructor:
+            >>> s = Sample('BBa2000#1', plate=Plate('plateB'), pos=1, temperature=25)
+        ...results in an additional 'temperature' field:
+            >>> s.temperature
+                25
+        
+    *Equality and hashing:*
+    
+        ID + subID + plate + position determine the identity of a sample:
+        
+        >>> s1 = Sample('s1', 'a', 'plateA', 1)
+        >>> s2 = Sample('s1#a', plate=evoware.plates['plateA'], pos='A1')
+        >>> s1 == s2
+        True
+        >>> s1 is s2
+        False
+        
+        >>> d = {s1 : 'some value'}
+        >>> d[s2] == 'some value'
+        True
     """
     
     def __init__(self, id='', subid='', plate=None, pos=0,
                  **kwargs):
         """
-        @param id: str | float | int | tuple, sample ID or tuple of (id, subid)
-        @param subid: str | float | int, sub-ID, e.g. to distinguish samples 
-                      with equal content
-        @param plate: Plate | str, Plate instance, or plate ID for looking up
-                      plate from evoware.plates. If no plate is given, the
-                      default plate instance from evoware.plates will be
-                      assigned.
+        Keyword Args:
+            id (str | float | int | tuple): sample ID or tuple of (id, subid)
+            subid (str | float | int): sub-ID, e.g. to distinguish samples 
+                   with equal content
+            plate (`Plate` | str): Plate instance, or plate ID for looking up
+                   plate from evoware.plates. If no plate is given, the
+                   default plate instance from `evoware.plates` will be
+                   assigned.
         """        
         self._subid = unicode(intfloat2int(subid)).strip()
         
@@ -180,9 +184,12 @@ class Sample(object):
 
     def _setid(self, ids):
         """
-        Normalize input ID or (ID, sub-ID) tuple or ID#subID string into pair of
+        Assign new ID and (optionally) sub-id.
+        
+        Normalizes input ID or (ID, sub-ID) tuple or ID#subID string into pair of
         main ID and optional sub-ID.
-        @param ids: float or int or str or unicode or [float|int|str|unicode]
+        Args:
+            ids (float | int | str | unicode or [float|int|str|unicode])
         """
         if type(ids) in [str, unicode] and '#' in ids:
             ids = ids.split('#')
@@ -276,14 +283,19 @@ class SampleConverter(object):
         return r
 
     def isvalid(self, sample):
-        """@return True, if entry is a valid Sample instance"""
+        """
+        Returns:
+            True: if entry is a valid Sample instance
+        """
         assert isinstance(sample, self.sampleClass)
         return True
 
     def validate(self, sample):
         """
-        @return Sample, validated Sample instance
-        @raise SampleValidationError, if entry is not a valid Sample instance
+        Returns:
+            `Sample`: validated Sample instance
+        Raises:
+            `SampleValidationError`: if entry is not a valid Sample instance
         """
         if not self.isvalid(sample):
             raise SampleValidationError, '%r is not a valid Sample' % sample
@@ -291,8 +303,13 @@ class SampleConverter(object):
     
     def getplate(self, plateid):
         """
-        @param plateid: str, plate ID (typically rackLabel)
-        @return Plate, matching plate instance or new one created by PlateIndex
+        Should really be named getcreatePlate.
+        
+        Args:
+            plateid (str): plate ID (typically rackLabel)
+        Returns:
+            `Plate`: matching plate instance or new one created by 
+                `PlateIndex`
         """
         assert isinstance(plateid, basestring)
         return self.plateindex.getcreate(plateid)
@@ -301,8 +318,11 @@ class SampleConverter(object):
         """
         Convert a dictionary into a new Sample instance or validate an existing
         Sample instance.
-        @param d - dict OR Sample
-        @return Sample, validated Sample instance
+        
+        Args:
+            d (dict | `Sample`):
+        Returns:
+            `Sample`: validated Sample instance
         """
         if isinstance(d, self.sampleClass):
             return self.validate(d)
@@ -317,6 +337,15 @@ class SampleConverter(object):
         return self.validate(r)
     
     def todict(self, sample):
+        """
+        Convert a sample instance into a dictionary (or return an existing
+        dictionary unmodified).
+        
+        Args:
+            sample (`Sample` | dict): input Sample instance or sample dict
+        Returns:
+            dict: a dictionary
+        """
         if isinstance(sample, dict):
             return sample
         
@@ -335,21 +364,22 @@ class SampleList(MutableSequence):
     List of Sample instances. Implements full list interface.
     
     Items can be added as dictionaries, which will then be converted to
-    Sample instances using the ``converterclass`` (default: SampleConverter).
+    Sample instances using the ``converter`` (default: `SampleConverter`).
     During conversion, plate IDs are converted into references to Plate
-    instances which are looked up from the given PlateIndex 
+    instances which are looked up from the given `PlateIndex` 
     (default: the static instance evoware.plates).
     """
 
-    def __init__(self, data=None, converter=SampleConverter()):
+    def __init__(self, data=None, converter=None):
         """
-        @param data: Sequence, list of dict or Sample instances
-        @param plateindex: PlateIndex, from which plate instances are looked up
-        @param converterclass: class, SampleConverter will be initialized with
-                               the plateindex and needs to have .tosample(v)
-                               method
+        Keyword Args:
+            data (Sequence): list of dict or Sample instances
+            converter (`SampleConverter`): SampleConverter instance
+                needs to have .tosample(v) method [default: `SampleConverter`]
         """
         super(SampleList, self).__init__()
+        
+        converter = converter or SampleConverter()
         assert isinstance(converter, SampleConverter)
         
         self._list = []
@@ -390,6 +420,16 @@ class SampleList(MutableSequence):
         self.insert(list_idx, val)
     
     def toSampleIndex(self, keyfield='fullid'):
+        """
+        Create an "index dictionary" with all sample instances indexed by their
+        ID.
+        
+        Keyword Args:
+            keyfield (str): the sample field or property to use as an index key
+                (default: 'fullid')
+        Returns:
+            dict: {'ID' : `Sample`}
+        """
         r = {}
         for sample in self._list:
             key = eval('sample.%s' % keyfield)

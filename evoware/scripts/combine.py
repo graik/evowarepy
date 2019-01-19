@@ -1,18 +1,6 @@
 #!/usr/bin/env python
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 Raik Gruenberg
-##
-##   Licensed under the Apache License, Version 2.0 (the "License");
-##   you may not use this file except in compliance with the License.
-##   You may obtain a copy of the License at
-##
-##       http://www.apache.org/licenses/LICENSE-2.0
-##
-##   Unless required by applicable law or agreed to in writing, software
-##   distributed under the License is distributed on an "AS IS" BASIS,
-##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##   See the License for the specific language governing permissions and
-##   limitations under the License.
+##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
 """Protoype script for generating PCR setup worklist from Excel files"""
 
 import sys, logging
@@ -23,20 +11,21 @@ import evoware.dialogs as D
 
 import evoware.sampleworklist as W
 import evoware.samples as S
-import evoware.excel as X
 import evoware.sampleconverters as C
+import evoware.excel as X
 
 def _use( options ):
     print """
-distribute.py -- Generate (variable) reagent distribution worklist from Excel file.
+combine.py -- Combine (hit-picking) samples from various positions
 
 Syntax (non-interactive):
-    distribute.py -i <distribute.xls> -o <output.worklist> 
-                  [-barcode -src <sourcesamples.xls> -columns <name1 name2>]
+    distribute.py -i <reactions.xls> -o <output.worklist> 
+                  -src <sources.xls>
+                  [-barcode -columns <name1 name2>]
                 
 Syntax (interactive):
     pcrsetup.py -dialogs [-p <project directory>
-                -o <output.worklist> -i <distribute.xls> -src <sources.xls>
+                -o <output.worklist> -i <reactions.xls> -src <sources.xls>
                 -barcode]
 
 
@@ -45,12 +34,12 @@ Options:
               This option also activates user dialog-based error reporting.
     -p        default project directory for input and output files
     
-    -i        input excel file listing target samples and which reagent volumes 
-              to dispense where
-    -src      (optional) specify reagent samples in separate excel file
+    -i        input excel file listing listing which source constructs should be pipetted
+              into which target wells
+    -src      source samples and their positions
     -o        output file name for generated worklist
               
-    -barcode  interpret plate IDs in all tables as barcode ()$Labware.ID$) 
+    -barcode  interpret plate IDs in all tables as barcode ($Labware.ID$) 
               rather than labware label
     -columns  explicitely specify which source columns to process (default: all)
 
@@ -80,6 +69,13 @@ def cleanOptions( options ):
                             multiple=False, 
                             title="Distribution Table")
         
+        if not 'src' in options:
+            options['src'] = D.askForFile(defaultextension='*.xls', 
+                                          filetypes=(('Excel classic','*.xls'),('Excel','*.xlsx'),('All files','*.*')), 
+                                          initialdir=options['p'], 
+                                          multiple=True, 
+                                          title="Source templates and primers and their locations")
+
         if not 'o' in options:
             options['o'] = D.askForFile(defaultextension='*.gwl', 
                             filetypes=(('Evo Worklist','*.gwl'),('Text file','*.txt'),('All files','*.*')), 
@@ -90,8 +86,7 @@ def cleanOptions( options ):
     
     
     options['i'] = F.absfile(options['i'])
-    if 'src' in options:
-        options['src'] = [ F.absfile(options['src']) ]
+    options['src'] = [ F.absfile(f) for f in U.tolist(options['src']) ]
     options['o'] = F.absfile(options['o'])
     
     options['columns'] = U.tolist(options.get('columns', []))
@@ -99,28 +94,29 @@ def cleanOptions( options ):
     options['useLabel'] = 'barcode' not in options
     return options
 
-def _testing(options):
-    import evoware.fileutil as F
-    options['i'] = F.testRoot('distribution.xls')
-    options['o'] = F.testRoot('test.gwl')
-    options['columns'] = ['buffer01']
-    return options    
-
 ###########################
 # MAIN
 ###########################
 import evoware as E
+
+import evoware.fileutil as F
+
 TESTING = True
 
 try:
+
     options = _defaultOptions()
-    if TESTING:
-        options = _testing(options)
-    else:
+    if not TESTING:
         if len(sys.argv) < 2:
             _use( _defaultOptions() )
             
         options = U.cmdDict( _defaultOptions() )
+    else:    
+        ## TESTING
+        options['i'] = F.testRoot('targetlist_PCR.xls')
+        options['src'] = [ F.testRoot('primers.xls'), F.testRoot('partslist.xls')]
+        options['o'] = F.testRoot('test.gwl')
+        options['columns'] = ['primer1', 'primer2', 'template']    
     
     try:
         options = cleanOptions(options) 
@@ -128,19 +124,20 @@ try:
         logging.error('missing option: ' + why)
         _use(options)
     
+    srcsamples = S.SampleList()
+    
+    for f in options['src']:
+        srcxls = X.XlsReader(byLabel=options['useLabel'])
+        srcxls.read( f )
+        srcsamples += S.SampleList(srcxls.rows)
+        
     xls = X.DistributionXlsReader(byLabel=options['useLabel'])
     xls.read(options['i'])
+    
+    srcsamples += xls.reagents
 
-    reagents = xls.reagents
-    
-    if 'src' in options:
-        srcxls = X.XlsReader(byLabel=options['useLabel'])
-        srcxls.read( options['f'] )
-        reagents = S.SampleList(srcxls.rows)
-        
     columns = options['columns']
-    
-    converter = C.DistributionConverter(reagents=reagents, sourcefields=columns)
+    converter = C.DistributionConverter(reagents=srcsamples, sourcefields=columns)
     
     targets = S.SampleList(xls.rows, converter=converter)
     

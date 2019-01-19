@@ -1,0 +1,6 @@
+numpy
+xlrd
+sphinx
+sphinx_rtd_theme
+
+
