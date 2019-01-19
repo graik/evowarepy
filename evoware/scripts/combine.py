@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+##   Copyright 2014 - 2019 Raik Gruenberg
 """Protoype script for generating PCR setup worklist from Excel files"""
 
 import sys, logging

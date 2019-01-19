@@ -1,5 +1,5 @@
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+##   Copyright 2014 - 2019 Raik Gruenberg
 import samples as S
 import worklist as W
 import targetsample as TS

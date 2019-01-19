@@ -1,5 +1,5 @@
 ##  evoware/py -- python modules for Evoware scripting
-##   Copyright 2014 - 2016 Raik Gruenberg, All Rights Reserved
+##   Copyright 2014 - 2019 Raik Gruenberg
 
 import numbers
 import samples as S
