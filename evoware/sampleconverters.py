@@ -4,9 +4,9 @@
 import collections as C
 from numbers import Number
 
-import worklist as W
-import samples as S
-from targetsample import TargetSample
+from . import worklist as W
+from . import samples as S
+from .targetsample import TargetSample
 import evoware as E
 
 class PickingConverter(S.SampleConverter):
@@ -113,7 +113,7 @@ class DistributionConverter(S.SampleConverter):
         self.reagents = S.SampleList(reagents)
         self.reagents = self.reagents.toSampleIndex()
     
-        self.sourcefields = sourcefields or self.reagents.keys()
+        self.sourcefields = sourcefields or list(self.reagents.keys())
 
     
     def isvalid(self, sample):
@@ -142,7 +142,7 @@ class DistributionConverter(S.SampleConverter):
 
 
 
-import testing as testing
+from . import testing as testing
 
 class Test(testing.AutoTest):
     """Test GoodCodeTemplate"""
@@ -180,7 +180,7 @@ class Test(testing.AutoTest):
         sources2 = tsample.sourceItems()
         sources1 = [ (src_sample1, 15.0), (src_sample2, 100.0) ]
     
-        self.assertItemsEqual(sources1, sources2)
+        self.assertCountEqual(sources1, sources2)
         
         
     def test_distributionConverter(self):
@@ -200,15 +200,15 @@ class Test(testing.AutoTest):
         
         reagent_instances = S.SampleList(reagents)
         
-        self.assertItemsEqual(tsample.sourcevolumes.values(), [20.0, 100.0])
+        self.assertCountEqual(list(tsample.sourcevolumes.values()), [20.0, 100.0])
         
         s1 = tsample.sourceIndex()['reagent1'][0]
         s2 = reagent_instances[0]
-        self.assert_(s1.plate == s2.plate)
+        self.assertTrue(s1.plate == s2.plate)
         
-        self.assertItemsEqual(tsample.sourcevolumes.keys(), reagent_instances)
+        self.assertCountEqual(list(tsample.sourcevolumes.keys()), reagent_instances)
         
-        self.assert_(S.SampleList(reagent_instances) == S.SampleList(reagents))
+        self.assertTrue(S.SampleList(reagent_instances) == S.SampleList(reagents))
         
         c2 = DistributionConverter(reagents=reagent_instances, 
                                        sourcefields=fields)

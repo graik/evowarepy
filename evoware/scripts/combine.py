@@ -15,7 +15,7 @@ import evoware.sampleconverters as C
 import evoware.excel as X
 
 def _use( options ):
-    print """
+    print("""
 combine.py -- Combine (hit-picking) samples from various positions
 
 Syntax (non-interactive):
@@ -47,9 +47,9 @@ If -dialogs is given, a missing -i or -o option triggers a file open
 dialog(s) for the appropriate file(s).
 
 Currently defined options:
-"""
+""")
     for key, value in options.items():
-        print "\t-",key, "\t",value
+        print("\t-",key, "\t",value)
 
     sys.exit(0)
 
@@ -120,7 +120,7 @@ try:
     
     try:
         options = cleanOptions(options) 
-    except KeyError, why:
+    except KeyError as why:
         logging.error('missing option: ' + why)
         _use(options)
     
@@ -144,7 +144,7 @@ try:
     with W.SampleWorklist(options['o'], reportErrors=options['dialogs']) as wl:
         wl.distributeSamples(targets)
 
-except Exception, why:
+except Exception as why:
     if options['dialogs']:
         D.lastException('Error generating Worklist')
     else:    

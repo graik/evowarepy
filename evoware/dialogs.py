@@ -15,14 +15,14 @@
 
 """TK / Windows user-notifications and dialog boxes"""
 
-import Tkinter, tkFileDialog, tkMessageBox
+import tkinter, tkinter.filedialog, tkinter.messagebox
 import sys, traceback, inspect
 import os
 
-import fileutil as F
+from . import fileutil as F
 
 ## create package-wide hidden window for unattached dialog boxes
-root = Tkinter.Tk()
+root = tkinter.Tk()
 root.withdraw()
 
 class PyDialogError(Exception):
@@ -47,30 +47,30 @@ def askForFile(defaultextension='*.csv',
                title=title)
     
     if not newfile:
-        r = tkFileDialog.askopenfilename(**options)
+        r = tkinter.filedialog.askopenfilename(**options)
     else:
         del options['multiple']
-        r = tkFileDialog.asksaveasfilename(**options)
+        r = tkinter.filedialog.asksaveasfilename(**options)
     return r
 
 
 
 def info(title, message):
     """Display info dialog box to user"""
-    tkMessageBox.showinfo(title, message)
+    tkinter.messagebox.showinfo(title, message)
 
 def warning(title, message):
     """Display warning dialog box to user"""
-    tkMessageBox.showwarning(title, message)
+    tkinter.messagebox.showwarning(title, message)
 
 def error(title, message):
     """Display error dialog box to user"""
-    tkMessageBox.showerror(title, message)
+    tkinter.messagebox.showerror(title, message)
 
 def lastException(title=None):
     """Report last exception in a dialog box."""
     msg = __lastError()
-    tkMessageBox.showerror(title= title or 'Python Exception', message=msg)
+    tkinter.messagebox.showerror(title= title or 'Python Exception', message=msg)
 
 def __lastError():
     """
@@ -99,7 +99,7 @@ def __lastError():
 
 ######################
 ### Module testing ###
-import testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test dialogs"""
@@ -126,8 +126,8 @@ class Test(testing.AutoTest):
     
     def test_exception(self):
         try:
-            raise PyDialogError, 'testing'
-        except PyDialogError, what:
+            raise PyDialogError('testing')
+        except PyDialogError as what:
             lastException()
 
 if __name__ == '__main__':

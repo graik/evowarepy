@@ -17,7 +17,7 @@
 import evoware as E
 from evoware import fileutil as F
 from evoware import PlateFormat, PlateError, Plate
-import keywords as K
+from . import keywords as K
 
 import xlrd as X  ## third party dependency
 
@@ -160,8 +160,8 @@ class XlsReader(object):
         """convert integer floats to int, then strip to unicode"""
         x = self.intfloat2int(x)
 
-        if type(x) is not unicode:
-            x = unicode(x)
+        if type(x) is not str:
+            x = str(x)
 
         x = x.strip()
         return x
@@ -176,15 +176,15 @@ class XlsReader(object):
         if values:
             v0 = values[0]
 
-            if v0 and isinstance(v0, basestring) and v0.lower() == keyword:
+            if v0 and isinstance(v0, str) and v0.lower() == keyword:
                 try:
-                    key = unicode(values[1]).strip()
+                    key = str(values[1]).strip()
                     value = self.intfloat2int(values[2])
                     return {key: value}
 
-                except Exception, error:
-                    raise ExcelFormatError, 'cannot parse parameter: %r' \
-                          % values
+                except Exception as error:
+                    raise ExcelFormatError('cannot parse parameter: %r' \
+                          % values)
 
         return {}
     
@@ -192,18 +192,18 @@ class XlsReader(object):
         if values:
             v0 = values[0]
     
-            if v0 and isinstance(v0, basestring) and v0.lower() == keyword:
+            if v0 and isinstance(v0, str) and v0.lower() == keyword:
                 try:
-                    key = unicode(values[1]).strip()
+                    key = str(values[1]).strip()
                     r = {'ID':key, 'wells':values[2]}
                     if len(values) > 3:
-                        r['racktype'] = unicode(values[3]).strip()
+                        r['racktype'] = str(values[3]).strip()
                     else:
                         r['racktype'] = None
                     return r
-                except Exception, error:
-                    raise ExcelFormatError, 'cannot parse format record: %r' \
-                          % values
+                except Exception as error:
+                    raise ExcelFormatError('cannot parse format record: %r' \
+                          % values)
         return {}
 
     def parsePlateformat(self, values):
@@ -238,7 +238,7 @@ class XlsReader(object):
         self.plateindex.update(r)
 
     def detectHeader(self, values):
-        if values and unicode(values[0]).lower().strip() == self._header0:
+        if values and str(values[0]).lower().strip() == self._header0:
             return True
         return False
 
@@ -248,9 +248,9 @@ class XlsReader(object):
         @return [unicode], list of table headers, lower case and stripped
         @raise ExcelFormatError, if "construct" is missing from headers
         """
-        r = [ unicode(x).lower().strip() for x in values ]
+        r = [ str(x).lower().strip() for x in values ]
         if not self._header0 in r:
-            raise ExcelFormatError, 'cannot parse table header %r' % values
+            raise ExcelFormatError('cannot parse table header %r' % values)
 
         return r
 
@@ -291,8 +291,8 @@ class XlsReader(object):
     
             return i
     
-        except ExcelFormatError, why:
-            raise ExcelFormatError, 'Invalid Excel file (could not find header).'
+        except ExcelFormatError as why:
+            raise ExcelFormatError('Invalid Excel file (could not find header).')
 
     def addEntry(self, d):
         """
@@ -349,13 +349,13 @@ class Test(testing.AutoTest):
         self.r = XlsReader()
         self.r.read(self.f_parts)
         
-        self.assertEqual(self.r.params['setting1'], u'value1')
-        self.assertEqual(self.r.params['setting2'], u'value2')
+        self.assertEqual(self.r.params['setting1'], 'value1')
+        self.assertEqual(self.r.params['setting2'], 'value2')
         self.assertEqual(len(self.r.rows), 27)
         self.assertEqual(len(self.r.rows[0].keys()), 4)
         self.assertDictEqual(self.r.rows[0], \
-            {u'plate': u'SB10', u'id': u'sb0101', u'sub-id': u'2', 
-             u'pos': u'A1'} )
+            {'plate': 'SB10', 'id': 'sb0101', 'sub-id': '2', 
+             'pos': 'A1'} )
         
         self.assertEqual(self.r.plateFormat('SB11'), PlateFormat(384))
         self.assertEqual(self.r.plateFormat(''), PlateFormat(96))

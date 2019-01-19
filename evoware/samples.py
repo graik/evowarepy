@@ -103,7 +103,7 @@ class Sample(object):
                    default plate instance from `evoware.plates` will be
                    assigned.
         """        
-        self._subid = unicode(intfloat2int(subid)).strip()
+        self._subid = str(intfloat2int(subid)).strip()
         
         self._id = ''
         if self._subid:
@@ -111,7 +111,7 @@ class Sample(object):
         else:
             self._setid(id)   # supports ID or ID#subID
 
-        if isinstance(plate, basestring):
+        if isinstance(plate, str):
             plate = E.plates.getcreate(plate)
         
         self._plate = plate or E.plates.defaultplate
@@ -191,13 +191,13 @@ class Sample(object):
         Args:
             ids (float | int | str | unicode or [float|int|str|unicode])
         """
-        if type(ids) in [str, unicode] and '#' in ids:
+        if type(ids) is str and '#' in ids:
             ids = ids.split('#')
 
         if type(ids) not in [tuple, list]:
             ids = (ids,)
 
-        ids = [unicode(intfloat2int(x)).strip() for x in ids]
+        ids = [str(intfloat2int(x)).strip() for x in ids]
         ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
         
         self._id = ids[0] if len(ids) > 0 else ''
@@ -256,8 +256,8 @@ class SampleConverter(object):
         """convert integer floats to int (if applicable), then strip to unicode"""
         x = intfloat2int(x)
 
-        if type(x) is not unicode:
-            x = unicode(x)
+        if type(x) is not str:
+            x = str(x)
 
         x = x.strip()
         return x
@@ -298,7 +298,7 @@ class SampleConverter(object):
             `SampleValidationError`: if entry is not a valid Sample instance
         """
         if not self.isvalid(sample):
-            raise SampleValidationError, '%r is not a valid Sample' % sample
+            raise SampleValidationError('%r is not a valid Sample' % sample)
         return sample
     
     def getplate(self, plateid):
@@ -311,7 +311,7 @@ class SampleConverter(object):
             `Plate`: matching plate instance or new one created by 
                 `PlateIndex`
         """
-        assert isinstance(plateid, basestring)
+        assert isinstance(plateid, str)
         return self.plateindex.getcreate(plateid)
 
     def tosample(self, d):
@@ -481,11 +481,11 @@ class Test(testing.AutoTest):
         s1 = Sample('s1', 'a', 'plateA', 1)
         s2 = Sample('s1#a', plate=E.plates['plateA'], pos='A1')
 
-        self.assert_(s1 == s2)
-        self.assert_(s1 is not s2)
+        self.assertTrue(s1 == s2)
+        self.assertTrue(s1 is not s2)
         
         d = {s1 : 'some value'}
-        self.assert_(d[s2] == 'some value')
+        self.assertTrue(d[s2] == 'some value')
     
     def test_sampleconverter(self):
         plate = E.plates.getcreate('plateA', Plate('plateA'))
@@ -506,14 +506,14 @@ class Test(testing.AutoTest):
         self.assertEqual(len(l), 27)
         
         # validate samples with default plate format (no format given for SB10)
-        self.assert_(l[3].fullid == 'sb0102#2')
-        self.assert_(l[4].fullid == 'sb0103')
-        self.assert_(l[3].plate.format.n == 96)
-        self.assert_(l[3].position2D == 'A5')
+        self.assertTrue(l[3].fullid == 'sb0102#2')
+        self.assertTrue(l[4].fullid == 'sb0103')
+        self.assertTrue(l[3].plate.format.n == 96)
+        self.assertTrue(l[3].position2D == 'A5')
         
         # validate records with custom plate format (format statement for SB11)
-        self.assert_(l[7].fullid == 'sb0104#3')
-        self.assert_(l[7].plate.format == PlateFormat(384))
+        self.assertTrue(l[7].fullid == 'sb0104#3')
+        self.assertTrue(l[7].plate.format == PlateFormat(384))
         self.assertEqual(l[7].position2D, 'P1')
         
         # replace list entries from dict or Sample instance
@@ -521,17 +521,17 @@ class Test(testing.AutoTest):
                       pos=8)
         l[1] = {'ID':'testsample1', 'sub-id':'A', 'plate':'SB11', 'pos':'I1'}
         
-        self.assert_(l[0].subid == '')
+        self.assertTrue(l[0].subid == '')
         
         # manipulate plate format after initial assignment
         self.assertEqual(l[0].position2D, 'D2')
         l[0].plate.format = PlateFormat(12)
         self.assertEqual(l[0].position2D, 'B3')
-        self.assert_(l[0].plateid == 'testplate')
+        self.assertTrue(l[0].plateid == 'testplate')
         
         # validate new Sample is attached to plate SB11 from Excel table
-        self.assert_(l[1].plate.format.n == 384)
-        self.assert_(l[1].plate == l[7].plate)
+        self.assertTrue(l[1].plate.format.n == 384)
+        self.assertTrue(l[1].plate == l[7].plate)
         
         self.assertEqual(l[1].fullid, 'testsample1#A')
         self.assertEqual(l[1].position, 9)

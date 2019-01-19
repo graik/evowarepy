@@ -17,9 +17,9 @@
 
 import copy, collections
 
-import fileutil as F
-import worklist as W
-import plates
+from . import fileutil as F
+from . import worklist as W
+from . import plate as P
 
 import xlrd as X  ## third party dependency
 
@@ -107,7 +107,7 @@ class BaseIndex(object):
 
     _header0 = HEADER_FIRST_VALUE.lower()
 
-    def __init__(self, plateformat=plates.PlateFormat(96),
+    def __init__(self, plateformat=P.PlateFormat(96),
                  relaxedId=True):
         """
         @param plateformat: plates.PlateFormat, default microplate format
@@ -130,14 +130,14 @@ class BaseIndex(object):
         if values:
             v0 = values[0]
     
-            if v0 and type(v0) in (str,unicode) and v0.lower() == keyword:
+            if v0 and type(v0) is str and v0.lower() == keyword:
                 try:
-                    key = unicode(values[1]).strip()
+                    key = str(values[1]).strip()
                     value = self.intfloat2int(values[2])
                     return {key: value}
                 
-                except Exception, error:
-                    raise IndexFileError, 'cannot parse parameter: %r' % values
+                except Exception as error:
+                    raise IndexFileError('cannot parse parameter: %r' % values)
 
         return {}
     
@@ -146,8 +146,8 @@ class BaseIndex(object):
         if not r:
             return r
         
-        plate = r.keys()[0]
-        r[plate] = plates.PlateFormat(r[plate])
+        plate = list(r.keys())[0]
+        r[plate] = P.PlateFormat(r[plate])
         
         return r
         
@@ -163,8 +163,8 @@ class BaseIndex(object):
         """convert integer floats to int, then strip to unicode"""
         x = self.intfloat2int(x)
         
-        if type(x) is not unicode:
-            x = unicode(x)
+        if type(x) is not str:
+            x = str(x)
         
         x = x.strip()
         return x
@@ -184,12 +184,12 @@ class BaseIndex(object):
     def parseHeader(self, values):
         """
         @param values: [any], list of row values from input parser
-        @return [unicode], list of table headers, lower case and stripped
+        @return [str], list of table headers, lower case and stripped
         @raise IndexFileError, if "construct" is missing from headers
         """
-        r = [ unicode(x).lower().strip() for x in values ]
+        r = [ str(x).lower().strip() for x in values ]
         if not 'id' in r:
-            raise IndexFileError, 'cannot parse table header %r' % values
+            raise IndexFileError('cannot parse table header %r' % values)
         
         return r
         
@@ -202,14 +202,14 @@ class BaseIndex(object):
         if not type(ids) in [list, tuple]:
             ids = [ids]
         
-        ids = [unicode(self.intfloat2int(x)).lower().strip() for x in ids]
+        ids = [str(self.intfloat2int(x)).lower().strip() for x in ids]
         ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
         if len(ids) > 1:
             return '#'.join(ids)
         return ids[0]
     
     def detectHeader(self, values):
-        if values and unicode(values[0]).lower().strip() == self._header0:
+        if values and str(values[0]).lower().strip() == self._header0:
             return True
         return False
     
@@ -249,8 +249,8 @@ class BaseIndex(object):
 
             return i
 
-        except IndexError, why:
-            raise IndexError, 'Invalid Index file (could not find header).'
+        except IndexError as why:
+            raise IndexError('Invalid Index file (could not find header).')
     
 
     def addEntry(self, d):
@@ -262,7 +262,7 @@ class BaseIndex(object):
         part_id = self.convertId( (d['id'], d.get('sub-id', '')) )
         
         if part_id in self._index:
-            raise DuplicateID, 'ID %s is used more than once.'
+            raise DuplicateID('ID %s is used more than once.')
         
         self._index[ part_id ] = d
     
@@ -375,8 +375,8 @@ class SourceIndex(BaseIndex):
             if default:
                 return default
 
-            raise KeyError, 'no entry found for ID %s in plate(s) %r' % \
-                  (id, plate)
+            raise KeyError('no entry found for ID %s in plate(s) %r' % \
+                  (id, plate))
         
         return r[0]['plate'], r[0]['pos']
     
@@ -440,18 +440,17 @@ class TargetIndex(BaseIndex):
             if type(v) in [list, tuple]:
                 r += [ self._clean_headers(v) ]
             else:
-                r += [ unicode(v).lower().strip() ]
+                r += [ str(v).lower().strip() ]
         return r
     
     def parsePreHeader(self, values):
         super(TargetIndex,self).parsePreHeader(values)
         
         r = self.parseParam(values, keyword='volume')
-        if r and not r.keys()[0] in self.source_cols + ['default']:
-            raise IndexFileError, \
-                  ('Volume definition "%s" does not match any source column.' %\
-                  r.keys()[0]) + ('\nExpected source columns are: %r' %\
-                  self.source_cols)
+        if r and not list(r.keys())[0] in self.source_cols + ['default']:
+            raise IndexFileError(('Volume definition "%s" does not match any source column.' %\
+                  list(r.keys())[0]) + ('\nExpected source columns are: %r' %\
+                  self.source_cols))
 
         self._volume.update(r)
     
@@ -539,10 +538,9 @@ class CherryWorklist(object):
                         
                         self.wl.transfer(src_plate, src_pos, dst_plate, dst_pos, 
                                          V, byLabel=byLabel)
-                except plates.PlateError, why:
-                    raise IndexFileError, \
-                          'Error processing target record "%s":\n%s' \
-                          % (target, why)
+                except P.PlateError as why:
+                    raise IndexFileError('Error processing target record "%s":\n%s' \
+                          % (target, why))
             
             self.wl.B()  ## force tip reset
         
@@ -583,12 +581,12 @@ class Test(testing.AutoTest):
         
         self.assertEqual(len(self.p), 27)
 
-        self.assertEqual(self.p.position('sb0102', '2'), (u'SB10', u'A5'))
+        self.assertEqual(self.p.position('sb0102', '2'), ('SB10', 'A5'))
         
         self.assertEqual(self.p.position('sb0102#2', plate='SB10'), 
                          self.p.position('sb0102', '2'))
         
-        self.assertEqual(self.p._plates['SB11'], plates.PlateFormat(384))
+        self.assertEqual(self.p._plates['SB11'], P.PlateFormat(384))
 
     def test_targetIndex_simple(self):
         t = TargetIndex(srccolumns=[('construct','clone')])

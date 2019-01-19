@@ -2,7 +2,7 @@
 ##   Copyright 2014 - 2019 Raik Gruenberg
 
 import numbers
-import samples as S
+from . import samples as S
 
 class TargetSample(S.Sample):
     """
@@ -53,8 +53,8 @@ class TargetSample(S.Sample):
         assert isinstance(sourcevolumes, dict)
         
         if len(sourcevolumes) > 0:
-            assert isinstance(sourcevolumes.keys()[0], S.Sample)
-            assert isinstance(sourcevolumes.values()[0], numbers.Number )
+            assert isinstance(list(sourcevolumes.keys())[0], S.Sample)
+            assert isinstance(list(sourcevolumes.values())[0], numbers.Number )
             
         self.sourcevolumes = sourcevolumes
         
@@ -86,7 +86,7 @@ class TargetSample(S.Sample):
 
 ######################
 ### Module testing ###
-import testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test GoodCodeTemplate"""
@@ -115,5 +115,5 @@ class Test(testing.AutoTest):
         sources2 = tsample.sourceItems()
         sources1 = [ (src_sample1, 15.0), (src_sample2, 100.0) ]
 
-        self.assertItemsEqual(sources1, sources2)
+        self.assertCountEqual(sources1, sources2)
 

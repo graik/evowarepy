@@ -42,7 +42,7 @@ def lastError():
             pass
         file = getframeinfo( trace.tb_frame )[0]
 
-        result = "%s in %s line %i:\n\t%s." % ( str(sys.exc_type),
+        result = "%s in %s line %i:\n\t%s." % ( str(sys.exc_info()[0]),
                   file, trace.tb_lineno, str(why) )
 
     finally:
@@ -136,18 +136,18 @@ def get_cmdDict(lst_cmd, dic_default):
 
                 counter = counter + 1
 
-    except (KeyError, UnboundLocalError), why:
-        raise KeyError, "Can't resolve command line options.\n \tError:"+\
-              str(why)
+    except (KeyError, UnboundLocalError) as why:
+        raise KeyError("Can't resolve command line options.\n \tError:"+\
+              str(why))
 
     ## get extra options from external file
     try:
-        if dic_cmd.has_key('x'):
+        if 'x' in dic_cmd:
             d = file2dic( dic_cmd['x'] )
             d.update( dic_cmd )
             dic_cmd = d
     except IOError:
-        raise IOError, "Error opening %s."% dic_cmd['x']
+        raise IOError("Error opening %s."% dic_cmd['x'])
 
     ## fill in missing default values
     dic_default.update( dic_cmd )

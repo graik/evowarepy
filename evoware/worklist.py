@@ -17,9 +17,9 @@
 
 __all__ = ['Worklist', 'WorklistException']  ## result of `import *`
 
-import fileutil as F
-import dialogs as D
-import plates as P
+from . import fileutil as F
+from . import dialogs as D
+from . import plate as P
 
 class WorklistException( Exception ):
     pass
@@ -215,8 +215,7 @@ class Worklist(object):
             tipMask (int): alternative tip mask (1 - 128, 8 bit encoded)
         """
         if not (rackLabel or (rackID and rackType)):
-            raise WorklistException, \
-            'Specify either source rack label, or both ID (barcode) and rackType.'
+            raise WorklistException('Specify either source rack label, or both ID (barcode) and rackType.')
         
         tipMask = str(tipMask or '')
         
@@ -268,8 +267,7 @@ class Worklist(object):
                  dispense (default: True)
         """
         if not (rackLabel or (rackID and rackType)):
-            raise WorklistException, \
-                'Specify either destination rack label or both ID and rack type.'
+            raise WorklistException('Specify either destination rack label or both ID and rack type.')
         
         tipMask = str(tipMask or '')
         
@@ -339,11 +337,9 @@ class Worklist(object):
             exlcudeWells ([int]): list of destination wells to skip []
         """
         if not (srcRackLabel or (srcRackID and srcRackType)):
-            raise WorklistException, \
-                  'Specify either source rack label or ID + rack type.'
+            raise WorklistException('Specify either source rack label or ID + rack type.')
         if not (dstRackLabel or (dstRackID and dstRackType)):
-            raise WorklistException, \
-                  'Specify either destination rack label or ID + rack type.'
+            raise WorklistException('Specify either destination rack label or ID + rack type.')
         
         r = 'R;%s;%s;%s;%i;%i;' % (srcRackLabel, srcRackID, srcRackType, 
                                     srcPosStart, srcPosEnd)

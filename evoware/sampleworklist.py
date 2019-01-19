@@ -1,8 +1,8 @@
 ##  evoware/py -- python modules for Evoware scripting
 ##   Copyright 2014 - 2019 Raik Gruenberg
-import samples as S
-import worklist as W
-import targetsample as TS
+from . import samples as S
+from . import worklist as W
+from . import targetsample as TS
 
 class SampleWorklist(W.Worklist):
     """
@@ -59,7 +59,7 @@ class SampleWorklist(W.Worklist):
 ######################
 ### Module testing ###
 
-import testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test SampleWorklist"""
@@ -75,13 +75,13 @@ class Test(testing.AutoTest):
         self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix='test_distributewl_')
 
     def cleanUp( self ):
-        import fileutil as F
+        from . import fileutil as F
         if not self.DEBUG:
             F.tryRemove(self.f_worklist)
 
 
     def test_distributeworklist(self):
-        from sampleconverters import DistributionConverter
+        from .sampleconverters import DistributionConverter
         import evoware as E
         
         freference = ['A;R01;;;1;;20;;;\n', 'D;T01;;;10;;20;;;\n', 'W;\n', 

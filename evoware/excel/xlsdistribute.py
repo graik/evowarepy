@@ -9,8 +9,8 @@
 ##from evoware.targetsample import TargetSample
 import evoware as E
 
-import xlsreader as X
-import keywords as K
+from . import xlsreader as X
+from . import keywords as K
 
 class DistributionXlsReader(X.XlsReader):
     """
@@ -35,13 +35,13 @@ class DistributionXlsReader(X.XlsReader):
         if values:
             v0 = values[0]
     
-            if v0 and isinstance(v0, basestring) and v0.lower() == keyword:
+            if v0 and isinstance(v0, str) and v0.lower() == keyword:
                 try:
-                    key = unicode(values[1]).strip()
+                    key = str(values[1]).strip()
                     return {'ID':key, 'plate':values[2], 'pos':values[3]}
-                except Exception, error:
-                    raise ExcelFormatError, 'cannot parse reagent record: %r' \
-                          % values
+                except Exception as error:
+                    raise ExcelFormatError('cannot parse reagent record: %r' \
+                          % values)
         return {}
             
     def parsePreHeader(self, values):

@@ -23,7 +23,7 @@ import evoware.dialogs as D
 import evoware.cherrypicking as P
 
 def _use( options ):
-    print """
+    print("""
 pcrsetup.py -- Generate PCR setup worklist from part index and cherry picking
                Excel files.
 
@@ -57,9 +57,9 @@ If -dialogs is given, a missing -i or -o or -scr option triggers a file open
 dialog(s) for the appropriate file(s).
 
 Currently defined options:
-"""
+""")
     for key, value in options.items():
-        print "\t-",key, "\t",value
+        print("\t-",key, "\t",value)
 
     sys.exit(0)
 
@@ -115,7 +115,7 @@ try:
     
     try:
         options = cleanOptions(options) 
-    except KeyError, why:
+    except KeyError as why:
         logging.error('missing option: ' + why)
         _use(options)
     
@@ -130,7 +130,7 @@ try:
     cwl.toWorklist(byLabel=options['useLabel'])
     cwl.close()
 
-except Exception, why:
+except Exception as why:
     if 'dialogs' in options:
         D.lastException('Error generating Worklist')
     else:    

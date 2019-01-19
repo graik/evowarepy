@@ -53,7 +53,7 @@ class PlateIndex(dict):
     
     def __setitem__(self, key, value):
         if not isinstance(value, Plate):
-            raise TypeError, 'cannot assign %r to PlateIndex' % value
+            raise TypeError('cannot assign %r to PlateIndex' % value)
         
         super(PlateIndex, self).__setitem__(key, value)    
     
@@ -138,9 +138,9 @@ class PlateIndex(dict):
         for plate in self.values():
             key = plate.rackLabel
             if not key:
-                raise PlateIndexError, 'plate %r has no rack label' % plate
+                raise PlateIndexError('plate %r has no rack label' % plate)
             if key in r:
-                raise PlateIndexError, 'duplicate rack label %s' % key
+                raise PlateIndexError('duplicate rack label %s' % key)
             r[key] = plate
         return r
     
@@ -154,9 +154,9 @@ class PlateIndex(dict):
         for plate in self.values():
             key = plate.barcode
             if not key:
-                raise PlateIndexError, 'plate %r has no barcode' % plate
+                raise PlateIndexError('plate %r has no barcode' % plate)
             if key in r:
-                raise PlateIndexError, 'duplicate barcode %s' % key
+                raise PlateIndexError('duplicate barcode %s' % key)
             r[key] = plate
         return r
 
@@ -196,11 +196,11 @@ class Test(testing.AutoTest):
         #d['plate01'] = Plate(rackLabel='plate01', format=PlateFormat(1))
         
         d2 = d.indexByLabel()
-        self.assert_(len(d2)==len(d))
+        self.assertTrue(len(d2)==len(d))
         
         d2 = d.indexByBarcode()
-        self.assert_(len(d2)==len(d))
-        self.assert_(d2['bc_plate01'] == d['plate01'])
+        self.assertTrue(len(d2)==len(d))
+        self.assertTrue(d2['bc_plate01'] == d['plate01'])
         
         self.assertEqual(d.getformat('plate01'), PlateFormat(2))
         self.assertEqual(d.getformat('unknown'), d.defaultformat)
@@ -209,7 +209,7 @@ class Test(testing.AutoTest):
         
         p1 = d.getcreate('testplateA')
         p2 = d.getcreate('testplateA')
-        self.assert_(p1 is p2)
+        self.assertTrue(p1 is p2)
 
 
 if __name__ == '__main__':

@@ -79,7 +79,7 @@ class ExampleClass( object ):
 
 ######################
 ### Module testing ###
-import testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test GoodCodeTemplate"""
@@ -94,8 +94,8 @@ class Test(testing.AutoTest):
         self.result = self.e1.reportSomething()
 
         if self.local:   ## only if the module is executed directly
-            print
-            print self.result 
+            print()
+            print(self.result) 
 
         self.assertEqual( self.result, 'example1: Hello World!',
                           'unexpected result' )
@@ -106,8 +106,8 @@ class Test(testing.AutoTest):
         self.e2.parent = self.e1
         
         if self.local:
-            print
-            print self.e2
+            print()
+            print(self.e2)
 
         self.assertEqual( str(self.e2), 'example1 > example2' )
 

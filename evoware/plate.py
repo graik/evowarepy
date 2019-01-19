@@ -88,7 +88,7 @@ class PlateFormat(object):
         @param pos: str, like 'A1' or '12'
         @return (str, int) - uppercase letter or '', number
         """
-        assert type(pos) in [unicode, str]
+        assert type(pos) is str
         match = self.ex_position.match(pos)
         if not match:
             return '', None
@@ -116,9 +116,9 @@ class PlateFormat(object):
             r = number
         
         if r > self.n:
-            raise PlateError, 'plate position %r exceeds number of wells' % r
+            raise PlateError('plate position %r exceeds number of wells' % r)
         if not r:
-            raise PlateError, 'invalid plate position: %r' % pos
+            raise PlateError('invalid plate position: %r' % pos)
         
         return r
     
@@ -135,7 +135,7 @@ class PlateFormat(object):
         row = int((pos-1) % self.ny)
         
         if col+1 > self.nx or row > self.ny:
-            raise PlateError, 'position outside plate dimensions'
+            raise PlateError('position outside plate dimensions')
         
         r = string.ascii_uppercase[row] + str(col+1)
         return r
@@ -215,8 +215,8 @@ class Plate(object):
                           by current number of wells
         @kwargs - any additional keyword args will be merged as fields
         """
-        assert isinstance(rackLabel, basestring)
-        assert isinstance(barcode, basestring)
+        assert isinstance(rackLabel, str)
+        assert isinstance(barcode, str)
         assert isinstance(format, PlateFormat)
         
         self.rackLabel = rackLabel
@@ -237,7 +237,7 @@ class Plate(object):
     @rackType.setter
     def rackType(self, value):
         """set a new rackType; a %i placeholder will be replaced"""
-        assert isinstance(value, basestring)
+        assert isinstance(value, str)
         self._rackType = value
     
     def isequal(self, o):
@@ -261,8 +261,7 @@ class Plate(object):
             return True
         if self.barcode and self.rackType:
             return False
-        raise PlateError, \
-              'cannot identify plate by either label or (barcode + type)'
+        raise PlateError('cannot identify plate by either label or (barcode + type)')
     
     def preferredID(self):
         """
@@ -277,7 +276,7 @@ class Plate(object):
 
 ######################
 ### Module testing ###
-import testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test PlateFormat"""
@@ -332,8 +331,8 @@ class Test(testing.AutoTest):
         p3 = Plate(barcode='0001', param2='extra param', 
                    format=PlateFormat(384), rackType='%i Deepwell Plate')
         
-        self.assert_(p1.isequal(p2))
-        self.assert_(not p1.isequal(p3))
+        self.assertTrue(p1.isequal(p2))
+        self.assertTrue(not p1.isequal(p3))
         
         self.assertTrue(p1.byLabel())
         self.assertFalse(p3.byLabel())

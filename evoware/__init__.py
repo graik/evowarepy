@@ -30,11 +30,11 @@ sys.path.append( osp.join( project_root, 'thirdparty'))
 ## Import main classes into package name space for convenience
 from evoware.evotask import EvoTask
 from evoware.worklist import Worklist, WorklistException
-from evoware.plates import PlateFormat, PlateError, Plate
+from evoware.plate import PlateFormat, PlateError, Plate
 from evoware.plateindex import PlateIndex, PlateIndexError
 plates = PlateIndex()
 
-from evoware.cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
+# from evoware.cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 
 ## documentation hints:
 ## * napoleon sphinx extension for readable docstrings: 

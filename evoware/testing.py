@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ##   Copyright 2014 - 2019 Raik Gruenberg
 ##
@@ -33,18 +33,18 @@ module where we could execute it directly from emacs (or with python
 are less easy to execute stand-alone and intermediate variables remain
 hidden within the test instance. 
 
-The L{localTest}() method removes this hurdle and runs the test code of a
+The :class:`localTest`() method removes this hurdle and runs the test code of a
 single module as if it would be executed directly in __main__. Simply putting
 the localTest() function without parameters into the __main__ section of your
 module is enough. Your Test.test_* methods should assign intermediate and
-final results to self.|something| variables -- L{localTest} will then push all
+final results to self.|something| variables -- :class:`localTest` will then push all
 self.* fields into the global namespace for interactive debugging.
 
 To get started, every module in your package should contain one or more classes
-derrived from L{AutoTest} (conventionally called C{Test}) that
-each contains one or more test_* functions. L{AutoTestLoader} then
+derrived from :class:`AutoTest` (conventionally called C{Test}) that
+each contains one or more test_* functions. :class:`AutoTestLoader` then
 automatically extracts all AutoTest child classes from the whole
-package and bundles them into a L{FilteredTestSuite}. Note, AutoTest is 
+package and bundles them into a :class:`FilteredTestSuite`. Note, AutoTest is 
 derrived from the standard unittest.TestCase -- refer to the Python 
 documentation for details on test writing.
 
@@ -105,7 +105,7 @@ import sys
 DEFAULT_PACKAGES = ['evoware', 'evoware.excel']
 
 #: tests with the following tags are excluded by default (override with -e)
-DEFAULT_EXCLUDE  = ['old']
+DEFAULT_EXCLUDE  = ['old', 'extra']
 
 ## END OF CONFIGURATION
 
@@ -114,8 +114,10 @@ NORMAL = 0  ## standard test case
 LONG   = 1  ## long running test case
 PVM    = 2  ## depends on PVM
 EXE    = 3  ## depends on external application
+EXTRA  = 4  ## tests not routinely run
 OLD    = 5  ## is obsolete
 SCRIPT = 6  ## a script test case
+FAILS  = 7  ## test known to currently fail (but procrastinated)
 
 class AutoTestError( Exception ):
     pass
@@ -147,7 +149,7 @@ def absfile( filename, resolveLinks=1 ):
     r = os.path.abspath( os.path.expanduser( filename ) )
 
     if '~' in r:
-        raise IOError, 'Could not expand user home in %s' % filename
+        raise IOError('Could not expand user home in %s' % filename)
 
     if resolveLinks:
         r = os.path.realpath( r )
@@ -156,16 +158,11 @@ def absfile( filename, resolveLinks=1 ):
 
 def packageRoot():
     """
-    The root folder of the parent python package
-    @return: str, absolute path of the root of current project
+    The folder containing the parent python package.
+    :return: str, absolute path of the root of current project
     """
-    ## import this module
-    import testing
-    ## get location of this module
-    f = absfile(testing.__file__)
-    ## extract path
-    f = os.path.join( os.path.split( f )[0], '..')
-    return absfile( f )
+    f = absfile(__file__)
+    return absfile( os.path.join( os.path.split( f )[0], '..') )
 
 def stripFilename( filename ):
     """
@@ -175,12 +172,11 @@ def stripFilename( filename ):
     """
     name = os.path.basename( filename )      # remove path
     try:
-        if name.find('.') <> -1:
+        if name.find('.') != -1:
             name = name[: name.rfind('.') ]     # remove ending
     except:
         pass  ## just in case there is no ending to start with...
     return name
-
 
 #########################
 ### Core test library ###
@@ -323,6 +319,57 @@ class FilteredTestSuite( U.TestSuite ):
             U.TestSuite.addTest( self, test )
 
 
+import time
+
+class PrettyTextTestResult( U.TextTestResult ):
+    """
+    Helper class for TextTestRunner.
+    Only print either test description or doc-string.
+    """
+
+    
+    def getDescription(self, test):
+        s = test.id() + '  '
+        ## remove leading package name
+        if s.count('.') > 2:
+            s = s[s.index('.')+1:]
+        return s
+    
+    def startTest(self, test):
+        super(U.TextTestResult, self).startTest(test)
+        if self.showAll:
+            desc = self.getDescription(test)
+            self.stream.write(desc.ljust(60,'.'))
+            self.stream.write("... ")
+            self.stream.flush()
+        self.startclock = time.time()
+
+    def addSuccess(self, test):
+        ## super(U.TextTestResult, self).addSuccess(test)
+        dt = time.time() - self.startclock
+        
+        if self.showAll:
+            if dt > 0.5:
+                self.stream.writeln('ok  [%5.2fs]' % dt)
+            else:
+                self.stream.writeln('ok')
+
+        elif self.dots:
+            self.stream.write('.')
+            self.stream.flush()
+
+
+class SimpleTextTestRunner( U.TextTestRunner ):
+    """
+    Convince TextTestRunner to use the flushing text output rather
+    than the default one.
+    """
+
+    def _makeResult(self):
+        return PrettyTextTestResult(self.stream, self.descriptions,
+                                    self.verbosity)
+
+
 class AutoTestLoader( object ):
     """
     A replacement for the unittest TestLoaders. It automatically
@@ -382,8 +429,9 @@ class AutoTestLoader( object ):
             try:
                 r += [ __import__( '.'.join([module, f]), globals(),
                                    None, [module]) ]
-            except Exception, why:
-                logging.error( 'Import failure: %s (%r)' % (f,why) )
+            except Exception as why:
+                if self.verbosity > 1:
+                    logging.error( 'Import failure in %s: %r' % (f,why) )
 
         return r
 
@@ -436,7 +484,7 @@ class AutoTestLoader( object ):
         """
         Report how things went to stdout.
         """
-        print '\nThe test log file has been saved to: %r'% self.log.name
+        print('\nThe test log file has been saved to: %r'% self.log.name)
         total  = self.result.testsRun
         failed = len(self.result.failures) + len(self.result.errors)
 
@@ -445,25 +493,25 @@ class AutoTestLoader( object ):
         m_total  = m_tested + m_untested
 
         ## report coverage
-        print '\nTest Coverage:\n=============\n'
-        print '%i out of %i modules had no test case:' % (m_untested,m_total)
+        print('\nTest Coverage:\n=============\n')
+        print('%i out of %i modules had no test case:' % (m_untested,m_total))
         for m in self.__moduleNames( self.modules_untested) :
-            print '\t', m
+            print('\t', m)
 
         ## print a summary
-        print '\nSUMMARY:\n=======\n'
-        print 'A total of %i tests from %i modules were run.' %(total,m_tested)
-        print '   - %i passed'% (total - failed)
-        print '   - %i failed'% failed
+        print('\nSUMMARY:\n=======\n')
+        print('A total of %i tests from %i modules were run.' %(total,m_tested))
+        print('   - %i passed'% (total - failed))
+        print('   - %i failed'% failed)
 
         ## and a better message about which module failed 
         if failed:
 
             for test, ftrace in self.result.failures:
-                print '      - failed: %s'% test.id()
+                print('      - failed: %s'% test.id())
 
             for test, ftrace in self.result.errors:
-                print '      - error : %s'% test.id()
+                print('      - error : %s'% test.id())
 
 
     def run( self, dry=False ):
@@ -477,7 +525,7 @@ class AutoTestLoader( object ):
             testclass.VERBOSITY = self.verbosity
             testclass.TESTLOG = self.log
 
-        runner = U.TextTestRunner(self.log, verbosity=self.verbosity,
+        runner = SimpleTextTestRunner(self.log, verbosity=self.verbosity,
                                   descriptions=False)
         if not dry:
             self.result = runner.run( self.suite )
@@ -519,7 +567,7 @@ def extractTestCases( namespace ):
             r += [i]
 
     if not r:
-        raise AutoTestError, 'no AutoTest class found in namespace'
+        raise AutoTestError('no AutoTest class found in namespace')
 
     return r
 
@@ -554,18 +602,20 @@ def localTest( testclass=None, verbosity=AutoTest.VERBOSITY,
         testclasses = extractTestCases( outer )
 
     suite = U.TestSuite()
-    for test in testclasses:
-        suite.addTests( U.TestLoader().loadTestsFromTestCase( test ) )
+    for c in testclasses:
+        suite.addTests( U.TestLoader().loadTestsFromTestCase(c) )
 
+    all_tests = []  ## cache pointer to tests; suite will drop them after run
     for test in suite:
         test.DEBUG = debug
         test.VERBOSITY = verbosity
         test.TESTLOG = log
+        all_tests += [ test ]
 
     runner= U.TextTestRunner(verbosity=verbosity)
     r = runner.run( suite )
 
-    for t in suite._tests:
+    for t in all_tests:
         outer.update( t.__dict__ )
         outer.update( {'self':t })
 
@@ -582,7 +632,7 @@ class Test(AutoTest):
 ### Script-related functions ###
 
 def _use( defaults ):
-    print """
+    print("""
 Run unittest tests for the whole package.
 
     test.py [-i |include tag1 tag2..| -e |exclude tag1 tag2..|
@@ -614,9 +664,9 @@ Examples:
 
         
 Default options:
-"""
+""")
     for key, value in defaults.items():
-        print "\t-",key, "\t",value
+        print("\t-%s \t%r" % (key,value))
         
     sys.exit(0)
     
@@ -667,18 +717,9 @@ def get_cmdDict(lst_cmd, dic_default):
 
                 counter = counter + 1
 
-    except (KeyError, UnboundLocalError), why:
-        raise UtilError, "Can't resolve command line options.\n \tError:"+\
-                  str(why)
-
-    ## get extra options from external file
-    try:
-        if dic_cmd.has_key('x'):
-            d = file2dic( dic_cmd['x'] )
-            d.update( dic_cmd )
-            dic_cmd = d
-    except IOError:
-        raise IOError, "Error opening %s."% dic_cmd['x']
+    except (KeyError, UnboundLocalError) as why:
+        raise AutoTestError("Can't resolve command line options.\n \tError:"+\
+                  str(why))
 
     ## fill in missing default values
     dic_default.update( dic_cmd )
@@ -744,12 +785,16 @@ if __name__ == '__main__':
     l = AutoTestLoader( allowed=o['i'], forbidden=o['e'],
                           verbosity=o['v'], log=o['log'], debug=o['debug'])
 
-
     for package in o['p']:
-        print 'collecting ', repr( package )
+        print('collecting ', repr( package ))
         l.collectTests( module=package )
 
     l.run( dry=o['dry'] )
     l.report()
 
-    print "DONE"
+    print("DONE")
+    
+    ## Travis-CI and others expect non-0 return on any error
+    if l.result.wasSuccessful() and l.result.testsRun > 1:
+        sys.exit(0)
+    sys.exit(1)

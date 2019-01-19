@@ -13,7 +13,7 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-import fileutil as F
+from . import fileutil as F
 import os.path as osp
 import os
 import logging, logging.handlers
@@ -70,7 +70,7 @@ class EvoTask(object):
         self.f_project = F.absfile(projectfolder)
         if not osp.isdir(self.f_project):
             logging.error('Project folder %s not found.' % self.f_project)
-            raise IOError, 'Project folder %s not found.' % self.f_project
+            raise IOError('Project folder %s not found.' % self.f_project)
         
         self.f_task = self.prepareFolder()
         
@@ -110,7 +110,7 @@ class EvoTask(object):
         if not osp.isdir(r):
             msg = 'Could not create task folder %r.' % r
             logging.error(msg)
-            raise IOError, msg
+            raise IOError(msg)
         
         return r
 
@@ -140,8 +140,8 @@ class Test(testing.AutoTest):
     def test_evotask_default(self):
         t = EvoTask(projectfolder=self.f_project)
         
-        self.assert_(osp.exists(t.f_task), 'no task folder')
-        self.assert_(osp.exists(osp.join(t.f_task, t.F_LOG)), 'no log file')
+        self.assertTrue(osp.exists(t.f_task), 'no task folder')
+        self.assertTrue(osp.exists(osp.join(t.f_task, t.F_LOG)), 'no log file')
 
 if __name__ == '__main__':
     

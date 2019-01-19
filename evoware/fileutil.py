@@ -21,7 +21,7 @@ import shutil, glob, sys
 
 import logging
 
-import util
+from . import util
 
 class UtilError( Exception ):
     pass
@@ -50,7 +50,7 @@ def absfile( filename, resolveLinks=1 ):
     r = osp.abspath( osp.expanduser( filename ) )
 
     if '~' in r:
-        raise UtilError, 'Could not expand user home in %s' % filename
+        raise UtilError('Could not expand user home in %s' % filename)
 
     if resolveLinks:
         r = osp.realpath( r )
@@ -98,7 +98,7 @@ def stripFilename( filename ):
     """
     name = osp.basename( filename )      # remove path
     try:
-        if name.find('.') <> -1:
+        if name.find('.') != -1:
             name = name[: name.rfind('.') ]     # remove ending
     except:
         pass  ## just in case there is no ending to start with...
@@ -138,7 +138,7 @@ def tryRemove(f, verbose=0, tree=0, wildcard=0 ):
             else:
                 os.remove( f )
         return True
-    except Exception, why:
+    except Exception as why:
         if verbose: logging.warning( 'Cannot remove %r:\n%s' % (f, 
                                                     util.lastError()) )
         return False
@@ -191,18 +191,18 @@ def get_cmdDict(lst_cmd, dic_default):
 
                 counter = counter + 1
 
-    except (KeyError, UnboundLocalError), why:
-        raise UtilError, "Can't resolve command line options.\n \tError:"+\
-                  str(why)
+    except (KeyError, UnboundLocalError) as why:
+        raise UtilError("Can't resolve command line options.\n \tError:"+\
+                  str(why))
 
     ## get extra options from external file
     try:
-        if dic_cmd.has_key('x'):
+        if 'x' in dic_cmd:
             d = file2dic( dic_cmd['x'] )
             d.update( dic_cmd )
             dic_cmd = d
     except IOError:
-        raise IOError, "Error opening %s."% dic_cmd['x']
+        raise IOError("Error opening %s."% dic_cmd['x'])
 
     ## fill in missing default values
     dic_default.update( dic_cmd )
@@ -232,7 +232,7 @@ def cmdDict( defaultDic={} ):
 
 ######################
 ### Module testing ###
-import testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test MyModule"""
