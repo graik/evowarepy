@@ -13,7 +13,7 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-VERSION = (0,1,4)
+VERSION = (0,1,6)
 
 __version__ = '.'.join([ str(i) for i in VERSION])
 __VERSION__ = __version__
