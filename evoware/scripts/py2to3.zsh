@@ -6,7 +6,7 @@ echo "Run from package folder evowarepy/evoware"
 echo "This will change the file in-place and then try to run a graphical diff"
 echo "against a copy in another folder (given as second argument)"
 
-OLDPATH="../evowarepy2x/evoware"
+OLDPATH="../../evowarepy2x/evoware"
 
 exists() { type -t "$1" > /dev/null 2>&1; }
 
