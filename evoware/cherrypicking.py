@@ -548,7 +548,7 @@ class CherryWorklist(object):
     
 ######################
 ### Module testing ###
-import testing, tempfile
+from . import testing
 
 class Test(testing.AutoTest):
     """Test PlateFormat"""
@@ -557,6 +557,8 @@ class Test(testing.AutoTest):
 
     def prepare(self):
         """Called once"""
+        import tempfile
+        
         self.f_parts = F.testRoot('partslist.xls')
         self.f_primers = F.testRoot('primers.xls')
         self.f_simple = F.testRoot('targetlist.xls')

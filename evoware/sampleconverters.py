@@ -142,7 +142,7 @@ class DistributionConverter(S.SampleConverter):
 
 
 
-from . import testing as testing
+from . import testing
 
 class Test(testing.AutoTest):
     """Test GoodCodeTemplate"""

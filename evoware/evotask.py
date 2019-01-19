@@ -13,10 +13,11 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-from . import fileutil as F
 import os.path as osp
 import os
 import logging, logging.handlers
+
+from . import fileutil as F
 
 class EvoTask(object):
     """
@@ -117,7 +118,7 @@ class EvoTask(object):
 
 ######################
 ### Module testing ###
-import testing, tempfile
+from . import testing
 
 class Test(testing.AutoTest):
     """Test Worklist"""
@@ -126,6 +127,8 @@ class Test(testing.AutoTest):
     DEBUG = False
 
     def prepare( self ):
+        import tempfile
+        
         self.f_project = tempfile.mkdtemp(prefix='test_evotask_')
         self.loglevel = logging.WARNING
         if self.local:

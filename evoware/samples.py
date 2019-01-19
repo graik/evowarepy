@@ -13,7 +13,7 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-import excel.keywords as K
+from evoware.excel import keywords as K
 
 import evoware as E
 from evoware import PlateFormat, PlateError, Plate

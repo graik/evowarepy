@@ -57,7 +57,7 @@ Usage
         ...
 
     ### Module testing ###
-    import testing
+    from . import testing
 
     class Test(testing.AutoTest):
         """Test MyModule"""

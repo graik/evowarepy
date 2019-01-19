@@ -502,7 +502,7 @@ class Worklist(object):
     
 ######################
 ### Module testing ###
-import testing, tempfile
+from . import testing
 
 class Test(testing.AutoTest):
     """Test Worklist"""
@@ -511,6 +511,7 @@ class Test(testing.AutoTest):
 
     def setUp( self ):
         """Called before *each* test"""
+        import tempfile
         self.fname = tempfile.mktemp(suffix=".gwl", prefix='test_worklist_')
     
     def tearDown(self):
