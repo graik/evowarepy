@@ -50,7 +50,7 @@ Options:
     -src      (optional) specify reagent samples in separate excel file
     -o        output file name for generated worklist
               
-    -barcode  interpret plate IDs in all tables as barcode ()$Labware.ID$) 
+    -barcode  interpret plate IDs in all tables as barcode ($Labware.ID$) 
               rather than labware label
     -columns  explicitely specify which source columns to process (default: all)
 

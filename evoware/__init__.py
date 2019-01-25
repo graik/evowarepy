@@ -35,6 +35,7 @@ plates = PlateIndex()
 
 from evoware.samples import Sample, SampleList
 from evoware.targetsample import TargetSample
+from evoware.sampleworklist import SampleWorklist
 
 # from evoware.cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 

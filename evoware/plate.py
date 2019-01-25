@@ -25,7 +25,7 @@ class PlateFormat(object):
     Describe plate columns : rows dimensions and convert back and for between 
     'human' (e.g. 'B2') and 'Tecan' (e.g. 10) well numbering.
     
-    Usage:
+    **Usage:**
     
     >>> f = PlateFormat(96)
     >>> f.nx
@@ -39,23 +39,23 @@ class PlateFormat(object):
     >>> f.int2human(96)
     'H12'
     
-    Equality and Hashing:
+    *Equality and Hashing:*
     
     Different PlateFormat instances compare equal if they have the same
     nx and ny dimensions. This also applies to hashing. If used as dict keys,
     nx and ny determine whether two PlateFormat instances are considered the
-    same key or not. For example::
+    same key or not. For example:
     
     >>> f1 = PlateFormat(12,8)
     >>> f2 = PlateFormat(96)
     >>> f1 == f2
-    True
+     True
     >>> f1 is f2
-    False
+     False
     >>> d = {f1: 'format_1'}
     >>> d[f2] = 'format 2'
     >>> d[f1]
-    'format 2'
+     'format 2'
     """
     
     ex_position = re.compile('([A-Za-z]{0,1})([0-9]+)')
@@ -69,9 +69,12 @@ class PlateFormat(object):
         96, 384 and 1536 wells. For any format more odd than this, nx and ny
         should be given explicitely.
         
-        @param n: int, number of wells (e.g. 96)
-        @param nx: int, optionally, number of columns (else calculated from n)
-        @param ny: int, optionally, number of rows (else calculated from nx)
+        Args:
+            n (int): number of wells (e.g. 96)
+            
+        Keyword Args:
+            nx (int): optional, number of columns (else calculated from n)
+            ny (int): optional, number of rows (else calculated from nx)
         """
         self.n = int(n)
         self.nx = int(nx or round(N.sqrt(3./2 * self.n)) )
@@ -85,8 +88,11 @@ class PlateFormat(object):
     def str2tuple(self, pos):
         """
         Normalize position string to tuple.
-        @param pos: str, like 'A1' or '12'
-        @return (str, int) - uppercase letter or '', number
+        
+        Args:
+            pos (str): like 'A1' or '12'
+        Returns:
+            tuple: (str, int) with uppercase letter or '' and number
         """
         assert type(pos) is str
         match = self.ex_position.match(pos)
@@ -97,11 +103,15 @@ class PlateFormat(object):
     
     def pos2int(self, pos):
         """
-        Convert input position to Tecan numbering
-        @param pos: str | int | float, e.g. 'A2' or 'a2' or 2 or 2.0
-        @return int, plate position according to Tecan numbering ('B1'=>9)
+        Convert and normalize given position to standard Tecan numbering
+        
+        Args:
+            pos (str | int | float): e.g. 'A2' or 'a2' or 2 or 2.0
+        Returns:
+            int: plate position according to Tecan numbering ('B1'=>9)
 
-        @raise PlateError, if the resulting position is outside well number
+        Raises:
+            PlateError: if the resulting position is outside well number
         """
         if type(pos) in [int, float]:
             letter, number = '', int(pos)
@@ -126,8 +136,11 @@ class PlateFormat(object):
         """
         Convert Tecan well position (e.g. running from 1 to 96) into human-
         readable plate coordinate such as 'A1' or 'H12'.
-        @param pos: int, well position in Tecan numbering
-        @return str, plate coordinate
+        
+        Args:
+            pos (int): well position in Tecan numbering
+        Returns:
+            str: plate coordinate
         """
         assert type(pos) is int
         
@@ -156,29 +169,61 @@ class PlateFormat(object):
 
 class Plate(object):
     """
-    Description of an individual plate or labware object.
+    Description of an individual plate or labware object. 
     
-    Fields:
+    See Also: `PlateIndex`
     
-    * rackLabel -- labware or rack label as fixed in deck layout within Evoware
-    * barcode -- rack ID, usually dynamically determined by barcode reader
-    * format -- plates.PlateFormat instance with number of rows and columns;
+    The main objectives of this class are:
+    
+        (1) to easily convert back and forth between integer labware positions
+        (e.g. 1 to 96) and coordinates (e.g. 'A1' to 'H12' or 'a1' to 'h12' or
+        "a01" etc.) while considering the plate format.
+    
+        (2) to identify a plate or labware regardless whether it is described
+        by deck position or by barcode.
+    
+    The conversion between coordinates and "Tecan numbering" depdends on the
+    following field:
+    
+    * format -- `PlateFormat` instance with number of rows and columns; \
                 default is 96 well format
-                
-    Properties:
+ 
+    **Plate identification** depends on two fields and one property:
+        
+    * rackLabel -- labware or rack label as fixed in deck layout within Evoware
+    * barcode -- rack ID, usually dynamically determined by barcode reader   
+    * rackType -- labware type (str) required by worklist commands if plates\
+        are identified by barcode rather than rackLabel;
+
+    Why are there three fields for something as simple as an ID? The problem is
+    that Evoware has two mutually exclusive methods for identifying a plate:
     
-    * rackType -- labware type (string) required by worklist commands if plates
-                  are identified by barcode rather than rackLabel;
+    * by rack label -- this means the evoware script has defined a `rackLabel`
+      field directly on the worktable layout. This is the more common and easier
+      way of finding a plate. In this case, it is the end user's responsability
+      to put the correct plate on the correct position of the worktable.
+          
+    * by barcode -- this means the evoware script, at some point, reads in the
+      barcode of a plate and then keeps track of where to find it. However, the
+      barcode alone is not enough. Any worklist commands using this plate also
+      need to know the `rackType` which is expected to be one of many fixed
+      Labware type strings such as (by default) "96 Well Microplate".
     
-    The getter method of this property can automatically update this rack
-    type string with the number of wells set in the current format. This is
-    best explained with an example:
+    The `byLabel()` method informs whether or not a plate is identified by 
+    rackLabel (`True`) or by barcode (`False`). The `preferredID()` method
+    tries to completely hide this whole barcode vs. label complexity and will
+    return a simple ID which can be either rackLabel or barcode, whatever seems
+    appropriate.
+    
+    Moreover, if barcodes are used, the getter method of the `rackType`
+    property can automatically update the rack type string with the number of
+    wells set in the current format. This is best explained with an example:
 
     >>> plate = Plate(barcode='0001', rackType='%i Well Microplate', 
                       format=PlateFormat(96))
     >>> plate.rackType
         "96 Well Microplate"
-    
+    >>>
     >>> plate.format = PlateFormat(384)
     >>> plate.rackType
         "384 Well Microplate"
@@ -187,41 +232,35 @@ class Plate(object):
     within the given rackType string. "%i Well Microplate" is the default, so
     the above example works also if no rackType is given.
     
-    Methods:
-    
-    byLabel() -> bool
-    Can be used to set the "byLabel" flag in several worklist commands. Returns
-    True if the plate has a non-empty rackLabel field. Returns False if the
-    plate has a valid pair of barcode and rackType. Otherwise raises a
-    PlateError.
-    
-    isequal(other) -> bool
-    Alternative equality testing between plate instances. 
-
+    A note about plate comparison: 
     As the fields of Plate remain mutable, __eq__ was left untouched so that
     Plate instances are hashable by instance identity.
-    Instead there is a custom 'isequal' method that compares the content of 
+    Instead there is a custom `isequal()` method that compares the content of 
     Plate instances.
     """
     
     def __init__(self, rackLabel='', barcode='', format=PlateFormat(96),
                  rackType='%i Well Microplate', **kwargs):
         """
-        @param rackLabel - str, labware (rack) label in Evoware script
-        @param barcode - str, rack ID, typically determined by barcode reader
-        @param format - plates.PlateFormat, default: PlateFormat(96)
-        @param rackType - str, labware (rack) type; required when using barcode
+        Create new Plate instance.
+        
+        Args:
+            rackLabel (str): labware (rack) label in Evoware script
+            barcode (str)  : rack ID, typically determined by barcode reader
+            format (`PlateFormat`): default is PlateFormat(96)
+            rackType (str): labware (rack) type; required when using barcode
                           Note: a %i placeholder will, at run time, be replaced 
                           by current number of wells
-        @kwargs - any additional keyword args will be merged as fields
+
+        Any additional keyword args will be merged in as custom fields.
         """
         assert isinstance(rackLabel, str)
         assert isinstance(barcode, str)
         assert isinstance(format, PlateFormat)
         
         self.rackLabel = rackLabel
-        self.barcode = barcode
-        self.format = format
+        self.barcode = barcode  #: rack ID, usually dynamically determined by barcode reader
+        self.format = format    #: `PlateFormat` instance
         
         self._rackType = rackType
         
@@ -236,12 +275,24 @@ class Plate(object):
     
     @rackType.setter
     def rackType(self, value):
-        """set a new rackType; a %i placeholder will be replaced"""
+        """
+        set a new rackType; a %i placeholder will be replaced by well number
+        of current `plateFormat`.
+        """
         assert isinstance(value, str)
         self._rackType = value
     
     def isequal(self, o):
-        """plate1.isequal(plate2) -> True if all their fields are equal"""
+        """
+        Alternative equality testing between plate instances. As the fields of
+        Plate remain mutable, __eq__ was left untouched so that Plate instances
+        are hashable by instance identity. Instead this is a custom method that
+        compares the content of Plate instances.
+
+        Returns:
+            bool: True if all their standard fields are equal (custom fields
+            added through the constructor are ignored).
+        """
         if self is o:
             return True
         return (self.rackLabel==o.rackLabel and self.barcode==o.barcode and \
@@ -253,9 +304,17 @@ class Plate(object):
     
     def byLabel(self):
         """
-        @return True, if plate can be identified by rackLabel in worklists
-        @return False, if plate can be identified by barcode and rackType
-        @raise PlateError, if neither is possible
+        Can be used to set the "byLabel" flag in several worklist
+        commands. It returns True if the plate has a non-empty rackLabel field.
+        It returns False if the plate has a valid pair of barcode and rackType.
+        Otherwise it raises a PlateError.
+        
+        Returns:
+            bool: 
+                - True, if plate can be identified by rackLabel in worklists
+                - False, if plate can be identified by barcode and rackType
+        Raises:
+            PlateError: if neither is possible
         """
         if self.rackLabel:
             return True
@@ -265,9 +324,15 @@ class Plate(object):
     
     def preferredID(self):
         """
-        @return rackLabel if available, otherwise return barcode
-        @raise PlateError, if neither is available or rackType is missing for
-                           barcode
+        Get whatever plate ID that is most likely to make Evoware happy. This
+        means return the fixed "rackLabel" if available but otherwise return
+        the dynamically determined barcode.
+        
+        Returns:
+            str: rackLabel if available, otherwise barcode
+        Raises:
+            PlateError: if neither is available or if rackType is missing for
+                the given barcode
         """
         if self.byLabel():
             return self.rackLabel

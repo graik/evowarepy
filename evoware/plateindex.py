@@ -12,7 +12,7 @@
 ##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
-"""Provides static instance 'plates' which maps IDs to plate instances"""
+"""Map IDs to plate instances"""
 
 from evoware import PlateFormat, PlateError, Plate
 
@@ -21,27 +21,29 @@ class PlateIndexError(PlateError):
 
 class PlateIndex(dict):
     """
-    Dictionary of plate instances. Currently, no assumption is made about
+    Dictionary of `Plate` instances. Currently, no assumption is made about
     what the keys look like -- they should be either rackLabel or barcode of
     the plates. A new index by one or the other can be created using:
     
     >>> index = plateindex.indexByLabel()
-    and
+    
+    and:
+    
     >>> index = plateindex.indexByBarcode()
     
     Special methods:
     
-    * getformat(key) -> will return the plates.PlateFormat instance of the plate
-                      mapped to key. If the key is missing, a default format
-                      is returned.
+    * getformat(key) -> will return the `PlateFormat` instance of the
+      plate mapped to key. If the key is missing, a default format is returned.
     
     Special Properties:
     
-    * defaultplate -> a Plate instance for missing entries
+    * defaultplate -> a `Plate` instance for missing entries
     
-    * defaultformat -> specifies the PlateFormat returned for missing keys    
+    * defaultformat -> specifies the `PlateFormat` returned for missing keys    
                       
-    A singleton (static) instance of PlateIndex is provided by evoware.__init__
+    A singleton (static) instance of `PlateIndex` is provided by evoware.__init__:
+    
     >>> import evoware as E
     >>> E.plates
     {}
@@ -70,11 +72,12 @@ class PlateIndex(dict):
     @property
     def defaultformat(self):
         """
-        Get the default PlateFormat for plates for which there is no entry
+        Get the default `PlateFormat` for plates for which there is no entry
         in the index. Typically, this is the format assigned to the special
         plate 'default' (see DEFAULT_KEY). If such a 'default' record doesn't
         exist, PlateFormat(96) will be returned.
-        @return PlateFormat
+        
+        Returns: `PlateFormat`
         """
         return self.defaultplate.format
     
@@ -83,7 +86,9 @@ class PlateIndex(dict):
         """
         Assign a new default PlateFormat. If there is no 'default' plate entry
         yet, it will be created.
-        @param plateformat: PlateFormat
+        
+        Args:
+            plateformat: `PlateFormat`
         """
         assert isinstance(plateformat, PlateFormat)
         
@@ -97,10 +102,13 @@ class PlateIndex(dict):
     def getformat(self, key, default=None):
         """
         Get plate format assigned to plate with given ID.
-        @param key: str, plate ID
-        @param default: PlateFormat, if given, will be returned for missing keys
-                        otherwise the defaultformat of the index is returned
-        @return PlateFormat
+        
+        Args:
+            key (str): plate ID
+            default (`PlateFormat`): if given, will be returned for missing keys
+               otherwise the defaultformat of the index is returned
+        Returns:
+            `PlateFormat`
         """
         if not key in self:
             if default:
@@ -114,9 +122,13 @@ class PlateIndex(dict):
         Get existing or return new Plate instance and add it to the index. If
         no default is given, an approximate clone of the current defaultplate
         is made and assigned rackLabel=k. 
-        @param k: str, plate ID / key
-        @param d: Plate, default plate instance; return and add if not k in
-               index
+        
+        Args: 
+            k (str): plate ID / key 
+            d (`Plate`) default plate instance; return and add if `k` cannot be 
+              found in index
+        Returns:
+            `Plate`: new or previously existing plate instance with given ID
         """
         if k in self:
             return self[k]
@@ -130,9 +142,14 @@ class PlateIndex(dict):
     
     def indexByLabel(self):
         """
-        @return a new PlateIndex instance with all plates indexed by rackLabel
-        @raise PlateIndexError, if any of the plates lacks a rackLabel
-        @raise PlateIndexError, if any two plates have the same rackLabel
+        Create and return a new PlateIndex instance indexed by labware label.
+        
+        Returns: 
+            `PlateIndex`: a new PlateIndex instance with all plates indexed 
+               by rackLabel
+        Raises:
+            `PlateIndexError`: if any of the plates lacks a rackLabel
+            `PlateIndexError`: if any two plates have the same rackLabel
         """
         r = PlateIndex()
         for plate in self.values():
@@ -146,9 +163,14 @@ class PlateIndex(dict):
     
     def indexByBarcode(self):
         """
-        @return a new PlateIndex instance with all plates indexed by barcode
-        @raise PlateIndexError, if any of the plates lacks a barcode
-        @raise PlateIndexError, if any two plates have the same barcode
+        Create and return a new PlateIndex instance indexed by barcode.
+        
+        Returns:
+            `PlateIndex`: a new PlateIndex instance with all plates indexed by 
+               barcode
+        Raises: 
+            `PlateIndexError`: if any of the plates lacks a barcode
+            `PlateIndexError`: if any two plates have the same barcode
         """
         r = PlateIndex()
         for plate in self.values():
