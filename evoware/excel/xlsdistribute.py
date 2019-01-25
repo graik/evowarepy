@@ -1,16 +1,23 @@
 ##  evoware/py -- python modules for Evoware scripting
 ##   Copyright 2014 - 2019 Raik Gruenberg
-"""Parse Excel file for reagent distribution"""
-##import collections as C
-##from numbers import Number
 ##
-##import evoware.worklist as W
-##import evoware.samples as S
-##from evoware.targetsample import TargetSample
+##   Licensed under the Apache License, Version 2.0 (the "License");
+##   you may not use this file except in compliance with the License.
+##   You may obtain a copy of the License at
+##
+##       http://www.apache.org/licenses/LICENSE-2.0
+##
+##   Unless required by applicable law or agreed to in writing, software
+##   distributed under the License is distributed on an "AS IS" BASIS,
+##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+##   See the License for the specific language governing permissions and
+##   limitations under the License.
+
+"""Parse Excel file for reagent distribution"""
 import evoware as E
 
-from . import xlsreader as X
-from . import keywords as K
+from evoware.excel import xlsreader as X
+from evoware.excel import keywords as K
 
 class DistributionXlsReader(X.XlsReader):
     """
