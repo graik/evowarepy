@@ -126,6 +126,7 @@ class Sample(object):
         self.updateFields(**kwargs)
 
     def updateFields(self, **kwargs):
+        """add additional fields to sample instance (used by constructor)"""
         self.__dict__.update(kwargs)
 
     @property

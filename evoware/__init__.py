@@ -15,8 +15,7 @@
 
 VERSION = (0,1,6)
 
-__version__ = '.'.join([ str(i) for i in VERSION])
-__VERSION__ = __version__
+__version__ = __VERSION__ = '.'.join([ str(i) for i in VERSION])
 
 ## add evowarepy/thirdparty to PYTHONPATH so that third party python modules
 ## can be bundled directly with the source code
@@ -33,6 +32,8 @@ from evoware.worklist import Worklist, WorklistException
 from evoware.plate import PlateFormat, PlateError, Plate
 from evoware.plateindex import PlateIndex, PlateIndexError
 plates = PlateIndex()
+
+from evoware.samples import Sample
 
 # from evoware.cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
 

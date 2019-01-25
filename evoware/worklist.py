@@ -394,7 +394,7 @@ class Worklist(object):
             volume (int): aspiration / dispense volume
             
         Keyword Args:
-            plateformat (PlateFormat, default: 96-well layout
+            plateformat (PlateFormat): default is 96-well layout
             liquidClass (str): alternative liquid class
             tipMask (int): alternative tip mask (1 - 128, 8 bit encoded)
             wash (bool): include 'W' statement for tip replacement after
