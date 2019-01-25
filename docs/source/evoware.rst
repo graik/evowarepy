@@ -13,6 +13,6 @@ Sample handling
    :template: autosummary/class_with_details.rst
    
    Sample
-   evoware.targetsample.TargetSample
+   TargetSample
  
 
