@@ -1,9 +1,10 @@
 
 
 Evoware documentation
-==================================
+=====================
 
-Contents:
+Evoware API documentation
+-------------------------
 
 .. toctree::
    :maxdepth: 3
