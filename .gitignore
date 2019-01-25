@@ -21,7 +21,6 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-*~
 
 # Installer logs
 pip-log.txt
@@ -52,4 +51,10 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/source/evoware
+
+# Editors
+*.wpr
+*.wpu
+*~
 
