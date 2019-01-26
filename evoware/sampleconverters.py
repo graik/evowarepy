@@ -14,7 +14,7 @@ from evoware.targetsample import TargetSample
 from evoware.excel import keywords as K
 from evoware.plate import Plate, PlateError
 
-class SampleValidationError:
+class SampleValidationError(Exception):
     pass
 
 class SampleConverter(object):
