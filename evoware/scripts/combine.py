@@ -115,7 +115,7 @@ try:
         ## TESTING
         options['i'] = F.testRoot('targetlist_PCR.xls')
         options['src'] = [ F.testRoot('primers.xls'), F.testRoot('partslist.xls')]
-        options['o'] = F.testRoot('test.gwl')
+        options['o'] = F.testRoot('/tmp/evoware_test.gwl')
         options['columns'] = ['primer1', 'primer2', 'template']    
     
     try:

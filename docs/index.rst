@@ -10,11 +10,12 @@ Evoware API documentation
    :maxdepth: 3
 
    source/evoware
+   source/scripts
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
+## * :ref:`modindex`
 * :ref:`search`
 

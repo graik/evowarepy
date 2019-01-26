@@ -102,7 +102,7 @@ def cleanOptions( options ):
 def _testing(options):
     import evoware.fileutil as F
     options['i'] = F.testRoot('distribution.xls')
-    options['o'] = F.testRoot('test.gwl')
+    options['o'] = F.testRoot('/tmp/evoware_test.gwl')
     options['columns'] = ['buffer01']
     return options    
 

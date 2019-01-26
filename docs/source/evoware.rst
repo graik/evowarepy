@@ -1,6 +1,5 @@
-
-Evoware API documentation
-=========================
+API Documentation
+=================
 
 Sample handling
 ---------------
