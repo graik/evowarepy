@@ -54,5 +54,19 @@ Modules with utility and helper methods.
    fileutil
    util
    dialogs
-   
 
+Exceptions
+----------
+
+The following errors are defined by evoware.
+
+.. autosummary::
+   :nosignatures:
+   :toctree: evoware
+   :template: autosummary/class_details.rst
+
+   SampleError
+   SampleValidationError
+   PlateError
+   PlateIndexError
+   WorklistException

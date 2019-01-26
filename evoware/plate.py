@@ -198,7 +198,7 @@ class Plate(object):
     Why are there three fields for something as simple as an ID? The problem is
     that Evoware has two mutually exclusive methods for identifying a plate:
     
-    * by rack label -- this means the evoware script has defined a `rackLabel`
+    * by rack label -- this means the evoware script has defined a ``rackLabel``
       field directly on the worktable layout. This is the more common and easier
       way of finding a plate. In this case, it is the end user's responsability
       to put the correct plate on the correct position of the worktable.

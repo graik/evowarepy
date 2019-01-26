@@ -44,7 +44,7 @@ class TargetSample(S.Sample):
     >>> tsample = TargetSample(id='Bba0000#a', plate=targetplate, pos='B2',
                                sourcevolumes=pick_dict)
     
-    The `sourcevolumes` property will then look like this:
+    The ``sourcevolumes`` property will then look like this:
     
     >>> tsample.sourcevolumes.keys() == [src1, src2]
     >>> tsample.sourcevolumes.values() == [15.0, 100.0]
@@ -68,7 +68,7 @@ class TargetSample(S.Sample):
                    with equal content
             plate (`Plate` | str): Plate instance, or plate ID for looking up
                    plate from evoware.plates. If no plate is given, the
-                   default plate instance from `evoware.plates` will be
+                   default plate instance from evoware.`plates` will be
                    assigned.
             sourcevolumes (dict): dict mapping source `Sample` 
                    instances to volume
@@ -96,7 +96,7 @@ class TargetSample(S.Sample):
     def sourceItems(self):
         """
         Pair each source sample with associated source volume.
-        `sample.sourceItems() == sample.sourcevolumes.items()`
+        ``sample.sourceItems() == sample.sourcevolumes.items()``
         
         Returns:
            list of dict: [ (`Sample`, float_volume) ]

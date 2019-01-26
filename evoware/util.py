@@ -37,8 +37,8 @@ def lastError():
     """
     Collect type and line of last exception.
     
-    @return: '<ExceptionType> in line <lineNumber>:<Exception arguments>'
-    @rtype: String
+    Returns:
+        str: '<ExceptionType> in line <lineNumber>:<Exception arguments>'
     """
     try:
         trace = sys.exc_info()[2]
@@ -62,11 +62,12 @@ def file2dic( filename ):
     """
     Construct dictionary from file with key - value pairs (one per line).
 
-    @param filename: name of file
-    @type  filename: str
+    Args:
+        filename (str): name of file
     
-    @raise ParsingError: if file can't be parsed into dictionary
-    @raise IOError: if file can't be opened
+    Raises:
+        ParsingError: if file can't be parsed into dictionary
+        IOError: if file can't be opened
     """
     try:
         line = None
@@ -98,25 +99,23 @@ def file2dic( filename ):
 
 def get_cmdDict(lst_cmd, dic_default):
     """
-    Parse commandline options into dictionary of type C{ {<option> : <value>} }
+    Parse commandline options into dictionary of type ``{<option> : <value>}``
     Options are recognised by a leading '-'.
     Error handling should be improved.
     
-    Option C{ -x |file_name| } is interpreted as file with additional options.
+    Option " -x <file_name> " is interpreted as file with additional options.
     The key value pairs in lst_cmd replace key value pairs in the
     -x file and in dic_default.
     
+    Args:
+        lst_cmd (list of str): list with the command line options;
+            e.g. ['-pdb', 'in1.pdb', 'in2.pdb', '-o', 'out.dat']
+        dic_default (dict of str vs str): dictionary with default options;
+            e.g. {'psf':'input.psf'}
 
-    @param lst_cmd: list with the command line options::
-                    e.g. ['-pdb', 'in1.pdb', 'in2.pdb', '-o', 'out.dat']
-    @type  lst_cmd: [str]
-    @param dic_default: dictionary with default options::
-                        e.g. {'psf':'in.psf'}
-    @type  dic_default: {str : str}
-
-    @return: command dictionary::
-             ala {'pdb':['in1.pdb', 'in2.pdb'], 'psf':'in.psf', 'o':'out.dat'}
-    @rtype: {<option> : <value>}
+    Returns:
+        dict: command dictionary; e.g.
+             {'pdb':['in1.pdb', 'in2.pdb'], 'psf':'input.psf', 'o':'out.dat'}
     """
     dic_cmd = {}                     # create return dictionary
     try:
@@ -165,19 +164,20 @@ def get_cmdDict(lst_cmd, dic_default):
 
 def cmdDict( defaultDic={} ):
     """
-    Convenience implementation of L{get_cmdDict}. Take command line options
+    Convenience implementation of `get_cmdDict`. Take command line options
     from sys.argv[1:] and convert them into dictionary.
-    Example::
+
+    Example:
       '-o out.dat -in 1.pdb 2.pdb 3.pdb -d' will be converted to
       {'o':'out.dat', 'in': ['1.pdb', '2.pdb', '3.pdb'], 'd':'' }
       
-    Option C{ -x |file_name| } is interpreted as file with additional options.
+    Option " -x <file_name> " is interpreted as file with additional options.
     
-    @param defaultDic: dic with default values.
-    @type  defaultDic: dic
+    Args:
+        defaultDic (dict): dic with default values.
 
-    @return: command dictionary
-    @rtype: dic
+    Returns:
+        dict: command dictionary
     """
     return get_cmdDict( sys.argv[1:], defaultDic )
 

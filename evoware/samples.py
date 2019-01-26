@@ -49,10 +49,12 @@ class Sample(object):
     *Usage:*
     
             >>> s = Sample('BBa1000#a', plate=Plate('plateA'), pos='B1')
-        is the same as
+            
+        is the same as:
         
-            >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)        
-        and results in
+            >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)
+            
+        and results in:
         
             >>> s.id
                'BBa1000'
@@ -69,6 +71,7 @@ class Sample(object):
         constructor:
         
             >>> s = Sample('BBa2000#1', plate=Plate('plateB'), pos=1, temperature=25)
+            
         ... which results in an additional 'temperature' field:
         
             >>> s.temperature
@@ -84,7 +87,7 @@ class Sample(object):
         True
         >>> s1 is s2
         False
-        
+
         >>> d = {s1 : 'some value'}
         >>> d[s2] == 'some value'
         True
