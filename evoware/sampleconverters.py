@@ -23,7 +23,8 @@ class SampleConverter(object):
     #: class to be used and enforced for entries
     sampleClass = Sample
     
-    #: rename input dict keys to standard field names {'synonym' : 'standard'}
+    #: rename input dict keys to standard field names. 
+    #: This is a dict mapping 'synonym' to 'standard field name'
     key2field = {K.column_subid : 'subid',
                  K.column_id : 'id',
                  K.column_plate : 'plate',
@@ -35,6 +36,13 @@ class SampleConverter(object):
     fields2strclean = ['id', 'subid']
     
     def __init__(self, plateindex=E.plates):
+        """
+        Constructor.
+        
+        Args: 
+            plateindex (`PlateIndex`): mapping plate IDs to Plate instances. 
+               This defaults to the central `evoware.plates`
+        """
         self.plateindex = plateindex
         
     def clean2str(self, x):
@@ -69,8 +77,10 @@ class SampleConverter(object):
 
     def isvalid(self, sample):
         """
+        Return `True` if entry is a valid sample.
+        
         Returns:
-            True: if entry is a valid Sample instance
+            bool: True, if entry is a valid Sample instance
         """
         assert isinstance(sample, self.sampleClass)
         return True
@@ -86,12 +96,12 @@ class SampleConverter(object):
             raise SampleValidationError('%r is not a valid Sample' % sample)
         return sample
     
-    def getplate(self, plateid):
+    def getcreatePlate(self, plateid):
         """
-        Should really be named getcreatePlate.
+        Fetch existing or create a new plate with given plate ID.
         
         Args:
-            plateid (str): plate ID (typically rackLabel)
+            plateid (str): plate ID, typically corresponding to rackLabel
         Returns:
             `Plate`: matching plate instance or new one created by 
                 `PlateIndex`
@@ -105,7 +115,7 @@ class SampleConverter(object):
         Sample instance.
         
         Args:
-            d (dict | `Sample`):
+            d (dict | `Sample`): dict with sample fields or `Sample` instance
         Returns:
             `Sample`: validated Sample instance
         """
@@ -115,7 +125,7 @@ class SampleConverter(object):
         d = self.cleanDict(d)
         
         if not isinstance(d['plate'], Plate):
-            d['plate'] = self.getplate(d['plate'])
+            d['plate'] = self.getcreatePlate(d['plate'])
         
         r = self.sampleClass(**d)
         
@@ -172,8 +182,8 @@ class PickingConverter(SampleConverter):
             plateindex (`PlateIndex`): mapping plate IDs to Plate instances
             sourcesamples (`SampleList`): to match source sample IDs to Samples
             sourcefields ([str]): name of field(s) pointing to source sample
-            defaultvolumes ({str:int}): map each or some source field(s) to 
-                a default volume
+            defaultvolumes (dict): map each or some source field(s) to 
+                a default volume. E.g. Should look like {'buffer' : 10}.
         """
         
         super(PickingConverter,self).__init__(plateindex)
@@ -241,9 +251,13 @@ class DistributionConverter(SampleConverter):
     def __init__(self, plateindex=E.plates, reagents=[], sourcefields=[] ):
         """
         Constructor.
+        
         Args:
-            reagents (`SampleList` or [{}]): sample IDs *must* match source fields
-            sourcefields ([str]): names of reagent/volume field(s) 
+            plateindex (`PlateIndex`): index of all known plates 
+                (default is evoware.plates)
+            reagents (`SampleList` or list of dict): sample IDs *must* match 
+                source fields
+            sourcefields (list of str): names of reagent/volume field(s) 
                 to process, default: all reagent IDs
         """
         super(DistributionConverter,self).__init__(plateindex)

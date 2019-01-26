@@ -24,7 +24,7 @@ Classes for handling and identifying samples and plates or labware.
 Evoware Worklists
 ------------------
 
-The following classes are providing a higher level access to the generation of 
+The following classes support the generation of 
 Tecan "work lists", that is, custom-formatted textfiles with
 instructions for the robot. 
 
@@ -35,6 +35,9 @@ instructions for the robot.
 
    Worklist
    SampleWorklist
+   SampleConverter
+   PickingConverter
+   DistributionConverter
 
 Helper Modules
 --------------

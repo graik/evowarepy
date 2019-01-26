@@ -6,13 +6,8 @@ Scripts that can be embedded in Evoware programs.
 
 .. currentmodule:: evoware.scripts
 
-.. autosummary::
-   :toctree: evoware
-   :template: autosummary/module_with_details.rst
+## .. autosummary::
+##    :toctree: scripts
 
-   assemblysetup
-   pcrsetup
-   distribute
-   combine
-   resetfile
+##    resetfile
 

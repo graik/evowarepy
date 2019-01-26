@@ -12,10 +12,13 @@ class SampleWorklist(W.Worklist):
     
     def transferSample(self, src, dst, volume, wash=True ):
         """
-        @param src: Sample, source sample instance
-        @param dst: Sample, destination sample instance
-        @param volume: int | float, volume to be transferred
-        @param wash: bool, include wash / tip change statement after dispense
+        Single volume transfer from one to another sample.
+        
+        Args:
+            src (`Sample`): source sample instance
+            dst (`Sample`): destination sample instance
+            volume (`int` | `float`): volume to be transferred
+            wash (bool): include wash / tip change statement after dispense
         """
         self.A(src.plate.preferredID(), src.position, volume, 
                byLabel=src.plate.byLabel(), rackType=src.plate.rackType)
@@ -24,7 +27,9 @@ class SampleWorklist(W.Worklist):
                byLabel=dst.plate.byLabel(), rackType=dst.plate.rackType)        
     
     def getReagentKeys(self, targetsamples):
-        """collect all source/reagent sample IDs from all target samples"""
+        """
+        collect all source/reagent sample IDs from all target samples
+        """
         assert isinstance(targetsamples, S.SampleList)
         keys = []
         
@@ -38,10 +43,19 @@ class SampleWorklist(W.Worklist):
     
     def distributeSamples(self, targetsamples, reagentkeys=(), wash=True):
         """
-        @param targetsamples: [ TargetSample ], destination positions with 
-                              reference to source samples and source volumes
-        @param reagentkeys: (str,), source sample IDs (column headers) to
-                            process; default: all
+        Variable reagent transfer to many target samples. The `reagentkeys`
+        field allows to limit the source positions / samples and can also be
+        used to spefify the order in which the transfer is occuring. Otherwise
+        all the source samples listed in any of the given `targetsamples` will
+        be transferred. In order to optimize tip and plate handling, transfers
+        are grouped by source reagent.
+        
+        Args:
+            targetsamples (list of `TargetSample`), destination positions with 
+                reference to source samples and source volumes
+            reagentkeys (tuple of str): source sample IDs (column headers) to
+                process; defaults to all
+            wash (bool): include wash / tip change statement after dispense
         """
         keys = reagentkeys or self.getReagentKeys(targetsamples)
         
