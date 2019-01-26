@@ -14,5 +14,5 @@
 ##   limitations under the License.
 """Classes related to Excel table parsing and processing"""
 
-from .xlsreader import XlsReader
+from .xlsreader import XlsReader, ExcelFormatError
 from .xlsdistribute import DistributionXlsReader

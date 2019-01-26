@@ -35,8 +35,7 @@ class XlsReader(object):
     dictionaries from the second file can have different keys than previous
     records.
     
-    Table Format
-    ============
+    **Table Format**
     
     A header row is identified according to HEADER_FIRST_VALUE (default:'ID'). 
     The content of each following row is then parsed into a dictionary 
@@ -49,23 +48,25 @@ class XlsReader(object):
     Rows without value in the first column are silently ignored.
     Only the first sheet in a workbook is parsed (this could be easily changed).
     
-    Parameters
-    ==========
+    **Parameters**
     
     Arbitrary parameters can be defined *before* the header row using the 
-    following syntax:
+    following syntax::
+    
         param   <key>   <value>
 
-    Example:
+    Example::
+    
         param    volume    130    ul    
-    ... which is converted into 
+
+    ... which is converted into
+    
     >>> reader.params['volume'] = 130
     
     The "param" key word in the first colum signals a new parameter
     record, which will be added to the `params` dictionary of the reader.
     
-    Plate and Plate format definitions
-    ==================================
+    **Plate and Plate format definitions**
     
     XlsReader accepts a PlateIndex instance which maps plate descriptions
     (evoware.Plate instances) to a given plate ID. Plate instances are
@@ -79,10 +80,12 @@ class XlsReader(object):
     The 'format' keyword in the first column anywhere before the actual
     header row signals a special plate format parameter which leads to 
     the addition / overriding of a Plate record in the PlateIndex. 
-    Usage:
+    Usage::
+    
         format    <plate ID>   <number wells>
     
-    Example:
+    Example::
+    
         format    assay0123    384
         format    dest01       96
         
@@ -106,22 +109,21 @@ class XlsReader(object):
     >>> reader.plateFormat('nonsense')  == plates.PlateFormat(96)
     >>> reader.plateFormat('') == plates.PlateFormat(96)
     
-    General Usage
-    =============
+    **General Usage**
     
     >>> reader = XlsReader()
     >>> reader.read('samples.xls')
     >>> reader.rows[0]
-        {u'plate': u'SB10', u'id': u'sb0101', u'pos': u'A1'}
+        {'plate': 'SB10', 'id': 'sb0101', 'pos': 'A1'}
     >>> reader.params['setting1']
-        u'value1'
+        'value1'
     >>> reader.plateFormat('dest01')
         <384 well PlateFormat>
 
-    List-like behaviour
-    ===================
+    **List-like behaviour**
 
     Shortcuts are defined to make the reader behave more like a list:
+    
     >>> reader.rows[0] == reader[0]
     >>> len(reader.rows) == len(reader)
     
@@ -136,11 +138,14 @@ class XlsReader(object):
     def __init__(self, plateIndex=E.plates, byLabel=True,
                  defaultRackType='%i Well Microplate'):
         """
-        @param plateIndex: PlateIndex instance, default: evoware.plates
-        @param byLabel: bool, interpret plate IDs as rackLabel (True);
-                        if False, all plate IDs are considered barcodes
-        @param defaultRackType: str, labware type assigned to new plates,
-                                if byLabel=False, see also Plate.__init__
+        Constructor.
+        
+        Args:
+            plateIndex (`PlateIndex`): default is evoware.`plates`
+            byLabel (bool): interpret plate IDs as rackLabel (True);
+                if False, all plate IDs are considered barcodes
+            defaultRackType (str): labware type assigned to new plates,
+                if byLabel=False, see also Plate.__init__
         """
         self.params = {}
         self.rows = []
@@ -170,8 +175,11 @@ class XlsReader(object):
         """
         Extract "param, key, value" parameter from one row of values 
         (collected before the actual table header).
-        @return {key : value}, dict with one key:value pair or empty dict
-        @raise ExcelFormatError
+        
+        Returns: 
+            {key : value}: dict with one key:value pair or empty dict
+        Raises:
+            `ExcelFormatError`
         """
         if values:
             v0 = values[0]
@@ -210,7 +218,9 @@ class XlsReader(object):
         """
         Extract special plate format parameter from header row starting
         with 'format'.
-        @return {plateID : Plate}, or empty dict
+        
+        Returns:
+            {plateID : Plate}: dict with plate instance or empty dict
         """
         r = self.parseFormatParam(values, keyword=K.plateformat)
         if not r:
@@ -244,9 +254,12 @@ class XlsReader(object):
 
     def parseHeader(self, values):
         """
-        @param values: [any], list of row values from input parser
-        @return [unicode], list of table headers, lower case and stripped
-        @raise ExcelFormatError, if "construct" is missing from headers
+        Args:
+            values ([any]): list of row values from input parser
+        Returns:
+            [unicode]: list of table headers, lower case and stripped
+        Raises:
+            `ExcelFormatError`: if "construct" is missing from headers
         """
         r = [ str(x).lower().strip() for x in values ]
         if not self._header0 in r:
@@ -258,9 +271,13 @@ class XlsReader(object):
         """
         Append data from given Excel file to internal list of rows and
         dictionary of parameters.
-        @param fname: str, excel file name including path
-        @raise IOError, if file cannot be found (presumably)
-        @raise ExcelFormatError, if header row cannot be found or interpreted
+        
+        Args:
+            fname (str) excel file name including path
+        
+        Raises:
+            IOError: if file cannot be found (presumably)
+            `ExcelFormatError`: if header row cannot be found or interpreted
         """
         book = X.open_workbook( F.absfile(fname) )
         sheet = book.sheets()[0]
@@ -297,7 +314,9 @@ class XlsReader(object):
     def addEntry(self, d):
         """
         Add new row entry to list.
-        @param d: dict, dictionary representing one row
+        
+        Args:
+            d (dict): dictionary representing one row
         """
         self.rows  += [ d ]
 
@@ -308,17 +327,21 @@ class XlsReader(object):
     
     def plateFormat(self, plate='', default=PlateFormat(96)):
         """
-        @param plate: str, plate ID (or '')
-        @return PlateFormat, plate format assigned to given plate ID
+        Args:
+            plate (str): plate ID (or '')
+            default (`PlateFormat`): return this default if entry is not found
+        
+        Returns:
+            `PlateFormat`: plate format assigned to given plate ID
         """
         return self.plateindex.getformat(plate, default=default)
 
     def __len__(self):
-        """len(reader) -> int, number of rows"""
+        """``len(reader) -> int``, number of rows"""
         return len(self.rows)
     
     def __getitem__(self, item):
-        """reader[int] -> dict, shortcut to dictionary of given row"""
+        """``reader[int] -> dict``, shortcut to dictionary of given row"""
         return self.rows[item]
     
 

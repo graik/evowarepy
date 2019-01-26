@@ -36,6 +36,26 @@ instructions for the robot.
 
    Worklist
    SampleWorklist
+   
+   
+Working with Excel files
+------------------------
+
+The core Excel parsing is found in the evoware.excel sub-package:
+
+.. toctree::
+   :maxdepth: 2
+
+   evoware.excel
+
+Excel files are parsed into dictionaries that are then converted into Sample
+information using different converter classes:
+
+.. autosummary::
+   :nosignatures:
+   :toctree: evoware
+   :template: autosummary/class_details.rst
+  
    SampleConverter
    PickingConverter
    DistributionConverter
