@@ -34,7 +34,7 @@ extensions = [
     'sphinx.ext.napoleon',   ## pre-process Google-style method docstrings
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary', ## summary listing of methods and module content
-    'extensions.autoautosummary',
+    'sphinx.ext.todo'        ## support .. todo:: (rst) or Todo: (google style) statement
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -109,7 +109,7 @@ pygments_style = 'friendly'
 #keep_warnings = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
 
 # -- Options for HTML output ----------------------------------------------
