@@ -26,6 +26,13 @@ def tolist(x):
         return x
     return [x]
 
+
+def intfloat2int(x):
+    """convert floats like 1.0, 100.0, etc. to int, if possible"""
+    if type(x) is float and x % 1 == 0:
+        return int(x)
+    return x
+
 def lastError():
     """
     Collect type and line of last exception.

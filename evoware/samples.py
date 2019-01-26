@@ -13,19 +13,13 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-from evoware.excel import keywords as K
+import evoware.util as U
 
 import evoware as E
 from evoware import PlateFormat, PlateError, Plate
 
 class SampleError(Exception):
     pass
-
-def intfloat2int(x):
-    """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
-    if type(x) is float and x % 1 == 0:
-        return int(x)
-    return x
 
 class Sample(object):
     """
@@ -103,7 +97,7 @@ class Sample(object):
                    default plate instance from `evoware.plates` will be
                    assigned.
         """        
-        self._subid = str(intfloat2int(subid)).strip()
+        self._subid = str(U.intfloat2int(subid)).strip()
         
         self._id = ''
         if self._subid:
@@ -198,7 +192,7 @@ class Sample(object):
         if type(ids) not in [tuple, list]:
             ids = (ids,)
 
-        ids = [str(intfloat2int(x)).strip() for x in ids]
+        ids = [str(U.intfloat2int(x)).strip() for x in ids]
         ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
         
         self._id = ids[0] if len(ids) > 0 else ''
@@ -230,134 +224,6 @@ class Sample(object):
         return self._hashcache
     
 
-class SampleValidationError:
-    pass
-
-class SampleConverter(object):
-    """default converter for generating Sample instances from dictionaries"""
-
-    #: class to be used and enforced for entries
-    sampleClass = Sample
-    
-    #: rename input dict keys to standard field names {'synonym' : 'standard'}
-    key2field = {K.column_subid : 'subid',
-                 K.column_id : 'id',
-                 K.column_plate : 'plate',
-                 K.column_pos : 'pos',
-                 'position': 'pos'
-                 }
-    
-    #: fields to subject to clean2str method (convert e.g. 1.0 to unicode '1')
-    fields2strclean = ['id', 'subid']
-    
-    def __init__(self, plateindex=E.plates):
-        self.plateindex = plateindex
-        
-    def clean2str(self, x):
-        """convert integer floats to int (if applicable), then strip to unicode"""
-        x = intfloat2int(x)
-
-        if type(x) is not str:
-            x = str(x)
-
-        x = x.strip()
-        return x
-
-
-    def cleanDict(self, d):
-        """
-        Pre-processing of dictionary values.
-        """
-        r = {}
-        
-        for key, value in d.items():
-            key = key.lower()
-            
-            if key in self.key2field:
-                key = self.key2field[key]
-            
-            if key in self.fields2strclean:
-                value = self.clean2str(value)
-            
-            r[key] = value
-
-        return r
-
-    def isvalid(self, sample):
-        """
-        Returns:
-            True: if entry is a valid Sample instance
-        """
-        assert isinstance(sample, self.sampleClass)
-        return True
-
-    def validate(self, sample):
-        """
-        Returns:
-            `Sample`: validated Sample instance
-        Raises:
-            `SampleValidationError`: if entry is not a valid Sample instance
-        """
-        if not self.isvalid(sample):
-            raise SampleValidationError('%r is not a valid Sample' % sample)
-        return sample
-    
-    def getplate(self, plateid):
-        """
-        Should really be named getcreatePlate.
-        
-        Args:
-            plateid (str): plate ID (typically rackLabel)
-        Returns:
-            `Plate`: matching plate instance or new one created by 
-                `PlateIndex`
-        """
-        assert isinstance(plateid, str)
-        return self.plateindex.getcreate(plateid)
-
-    def tosample(self, d):
-        """
-        Convert a dictionary into a new Sample instance or validate an existing
-        Sample instance.
-        
-        Args:
-            d (dict | `Sample`):
-        Returns:
-            `Sample`: validated Sample instance
-        """
-        if isinstance(d, self.sampleClass):
-            return self.validate(d)
-    
-        d = self.cleanDict(d)
-        
-        if not isinstance(d['plate'], Plate):
-            d['plate'] = self.getplate(d['plate'])
-        
-        r = self.sampleClass(**d)
-        
-        return self.validate(r)
-    
-    def todict(self, sample):
-        """
-        Convert a sample instance into a dictionary (or return an existing
-        dictionary unmodified).
-        
-        Args:
-            sample (`Sample` | dict): input Sample instance or sample dict
-        Returns:
-            dict: a dictionary
-        """
-        if isinstance(sample, dict):
-            return sample
-        
-        assert isinstance(sample, self.sampleClass)
-        r = {K.column_id : sample.id,
-             K.column_subid : sample.subid,
-             K.column_plate : sample.plateid,
-             K.column_pos : sample.position}
-        return r
- 
-
 from collections import MutableSequence
 
 class SampleList(MutableSequence):
@@ -378,6 +244,8 @@ class SampleList(MutableSequence):
             converter (`SampleConverter`): SampleConverter instance
                 needs to have .tosample(v) method [default: `SampleConverter`]
         """
+        from evoware.sampleconverters import SampleConverter
+        
         super(SampleList, self).__init__()
         
         converter = converter or SampleConverter()
@@ -488,15 +356,6 @@ class Test(testing.AutoTest):
         d = {s1 : 'some value'}
         self.assertTrue(d[s2] == 'some value')
     
-    def test_sampleconverter(self):
-        plate = E.plates.getcreate('plateA', Plate('plateA'))
-        
-        d1 = dict(id='BBa1000', subid=1.0, plate=plate, pos='A1')
-        s1 = SampleConverter().tosample(d1)
-        
-        s2 = Sample(id='BBa1000#1', plate=E.plates['plateA'], pos=1)
-        self.assertEqual(s1, s2)
-
     def test_samplelist(self):
         import evoware.excel.xlsreader as X
         r = X.XlsReader()

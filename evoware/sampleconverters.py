@@ -1,19 +1,152 @@
 ##  evoware/py -- python modules for Evoware scripting
 ##   Copyright 2014 - 2019 Raik Gruenberg
-"""Parse Excel file for reagent distribution"""
+"""Parse dictionaries (from Excel files) for reagent distribution"""
+
 import collections as C
 from numbers import Number
 
-from . import worklist as W
-from . import samples as S
-from .targetsample import TargetSample
 import evoware as E
+import evoware.util as U
+import evoware.worklist as W
 
-class PickingConverter(S.SampleConverter):
+from evoware.samples import Sample, SampleError, SampleList
+from evoware.targetsample import TargetSample
+from evoware.excel import keywords as K
+from evoware.plate import Plate, PlateError
+
+class SampleValidationError:
+    pass
+
+class SampleConverter(object):
+    """default converter for generating Sample instances from dictionaries"""
+
+    #: class to be used and enforced for entries
+    sampleClass = Sample
+    
+    #: rename input dict keys to standard field names {'synonym' : 'standard'}
+    key2field = {K.column_subid : 'subid',
+                 K.column_id : 'id',
+                 K.column_plate : 'plate',
+                 K.column_pos : 'pos',
+                 'position': 'pos'
+                 }
+    
+    #: fields to subject to clean2str method (convert e.g. 1.0 to unicode '1')
+    fields2strclean = ['id', 'subid']
+    
+    def __init__(self, plateindex=E.plates):
+        self.plateindex = plateindex
+        
+    def clean2str(self, x):
+        """convert integer floats to int (if applicable), then strip to string"""
+        x = U.intfloat2int(x)
+
+        if type(x) is not str:
+            x = str(x)
+
+        x = x.strip()
+        return x
+
+
+    def cleanDict(self, d):
+        """
+        Pre-processing of dictionary values.
+        """
+        r = {}
+        
+        for key, value in d.items():
+            key = key.lower()
+            
+            if key in self.key2field:
+                key = self.key2field[key]
+            
+            if key in self.fields2strclean:
+                value = self.clean2str(value)
+            
+            r[key] = value
+
+        return r
+
+    def isvalid(self, sample):
+        """
+        Returns:
+            True: if entry is a valid Sample instance
+        """
+        assert isinstance(sample, self.sampleClass)
+        return True
+
+    def validate(self, sample):
+        """
+        Returns:
+            `Sample`: validated Sample instance
+        Raises:
+            `SampleValidationError`: if entry is not a valid Sample instance
+        """
+        if not self.isvalid(sample):
+            raise SampleValidationError('%r is not a valid Sample' % sample)
+        return sample
+    
+    def getplate(self, plateid):
+        """
+        Should really be named getcreatePlate.
+        
+        Args:
+            plateid (str): plate ID (typically rackLabel)
+        Returns:
+            `Plate`: matching plate instance or new one created by 
+                `PlateIndex`
+        """
+        assert isinstance(plateid, str)
+        return self.plateindex.getcreate(plateid)
+
+    def tosample(self, d):
+        """
+        Convert a dictionary into a new Sample instance or validate an existing
+        Sample instance.
+        
+        Args:
+            d (dict | `Sample`):
+        Returns:
+            `Sample`: validated Sample instance
+        """
+        if isinstance(d, self.sampleClass):
+            return self.validate(d)
+    
+        d = self.cleanDict(d)
+        
+        if not isinstance(d['plate'], Plate):
+            d['plate'] = self.getplate(d['plate'])
+        
+        r = self.sampleClass(**d)
+        
+        return self.validate(r)
+    
+    def todict(self, sample):
+        """
+        Convert a sample instance into a dictionary (or return an existing
+        dictionary unmodified).
+        
+        Args:
+            sample (`Sample` | dict): input Sample instance or sample dict
+        Returns:
+            dict: a dictionary
+        """
+        if isinstance(sample, dict):
+            return sample
+        
+        assert isinstance(sample, self.sampleClass)
+        r = {K.column_id : sample.id,
+             K.column_subid : sample.subid,
+             K.column_plate : sample.plateid,
+             K.column_pos : sample.position}
+        return r
+ 
+
+class PickingConverter(SampleConverter):
     """
     Convert dictionaries or Sample instances to TargetSample instances.
 
-    This converter assumes a "pick list" input where each row contains:
+    This converter assumes a "pick list" input where each "row" contains:
        - one or more source columns (sourcefields) pointing to a source 
          sample ID
     
@@ -33,11 +166,14 @@ class PickingConverter(S.SampleConverter):
     def __init__(self, plateindex=E.plates, sourcesamples=[], 
                  sourcefields=['source'], defaultvolumes={} ):
         """
-        @param plateindex: PlateIndex, mapping plate IDs to Plate instances
-        @param sourcesamples: SampleList, to match source sample IDs to Samples
-        @param sourcefields: [str], name of field(s) pointing to source sample
-        @param defaultvolumes: {str:int}, map each or some source field(s) to 
-                               a default volume
+        Constructor.
+        
+        Args: 
+            plateindex (`PlateIndex`): mapping plate IDs to Plate instances
+            sourcesamples (`SampleList`): to match source sample IDs to Samples
+            sourcefields ([str]): name of field(s) pointing to source sample
+            defaultvolumes ({str:int}): map each or some source field(s) to 
+                a default volume
         """
         
         super(PickingConverter,self).__init__(plateindex)
@@ -50,7 +186,7 @@ class PickingConverter(S.SampleConverter):
     def isvalid(self, sample):
         
         for srcsample, vol in sample.sourcevolumes.items():
-            if not isinstance(srcsample, S.Sample):
+            if not isinstance(srcsample, Sample):
                 return False
         
         return super(PickingConverter, self).isvalid(sample)
@@ -65,7 +201,7 @@ class PickingConverter(S.SampleConverter):
         for f in self.sourcefields:
             
             src_sample = d[f]
-            if not isinstance(src_sample, S.Sample):
+            if not isinstance(src_sample, Sample):
                 src_sample = self.sampleindex[ src_sample ]
             
             volume_field = self.volumefield(f)
@@ -79,7 +215,7 @@ class PickingConverter(S.SampleConverter):
         return r
     
 
-class DistributionConverter(S.SampleConverter):
+class DistributionConverter(SampleConverter):
     """
     Convert dictionaries or Sample instances to TargetSample instances.
     
@@ -91,11 +227,11 @@ class DistributionConverter(S.SampleConverter):
     
     >>> reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
                      {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
-
+    >>>
     >>> fields = ['reagent1', 'reagent2']
-    
+    >>>
     >>> c = DistributionListConverter(reagents=reagents, sourcefields=fields)
-    
+    >>>
     >>> tsample = c.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
                               'reagent1': 20, 'reagent2': 100})
     """
@@ -104,13 +240,15 @@ class DistributionConverter(S.SampleConverter):
     
     def __init__(self, plateindex=E.plates, reagents=[], sourcefields=[] ):
         """
-        @param reagents: SampleList or [{}], sample IDs *must* match source fields
-        @param sourcefields: [str], names of reagent/volume field(s) 
-                             to process, default: all reagent IDs
+        Constructor.
+        Args:
+            reagents (`SampleList` or [{}]): sample IDs *must* match source fields
+            sourcefields ([str]): names of reagent/volume field(s) 
+                to process, default: all reagent IDs
         """
         super(DistributionConverter,self).__init__(plateindex)
     
-        self.reagents = S.SampleList(reagents)
+        self.reagents = SampleList(reagents)
         self.reagents = self.reagents.toSampleIndex()
     
         self.sourcefields = sourcefields or list(self.reagents.keys())
@@ -119,7 +257,7 @@ class DistributionConverter(S.SampleConverter):
     def isvalid(self, sample):
         
         for srcsample, vol in sample.sourcevolumes.items():
-            if not isinstance(srcsample, S.Sample):
+            if not isinstance(srcsample, Sample):
                 return False
         
         return super(DistributionConverter, self).isvalid(sample)
@@ -145,7 +283,7 @@ class DistributionConverter(S.SampleConverter):
 from . import testing
 
 class Test(testing.AutoTest):
-    """Test GoodCodeTemplate"""
+    """Test sampleconverters"""
 
     TAGS = [ testing.LONG ]
 
@@ -154,6 +292,15 @@ class Test(testing.AutoTest):
         import evoware as E
         E.plates.clear()
             
+    def test_sampleconverter(self):
+        plate = E.plates.getcreate('plateA', Plate('plateA'))
+        
+        d1 = dict(id='BBa1000', subid=1.0, plate=plate, pos='A1')
+        s1 = SampleConverter().tosample(d1)
+        
+        s2 = Sample(id='BBa1000#1', plate=E.plates['plateA'], pos=1)
+        self.assertEqual(s1, s2)
+
     
     def test_pickingconverter(self):
         import evoware as E
@@ -162,10 +309,10 @@ class Test(testing.AutoTest):
         
         sourceplate = E.Plate('SRC')
     
-        src_sample1 = S.Sample('R01', plate=sourceplate, pos=1)
-        src_sample2 = S.Sample('R02#b', plate=sourceplate, pos=2)
+        src_sample1 = Sample('R01', plate=sourceplate, pos=1)
+        src_sample2 = Sample('R02#b', plate=sourceplate, pos=2)
         
-        src_samples = S.SampleList([src_sample1, src_sample2])
+        src_samples = SampleList([src_sample1, src_sample2])
         
         conv = PickingConverter(sourcesamples=src_samples, 
                                      sourcefields=['reagent1', 'reagent2'], 
@@ -198,7 +345,7 @@ class Test(testing.AutoTest):
         tsample = c.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
                               'reagent1': 20, 'reagent2': 100})
         
-        reagent_instances = S.SampleList(reagents)
+        reagent_instances = SampleList(reagents)
         
         self.assertCountEqual(list(tsample.sourcevolumes.values()), [20.0, 100.0])
         
@@ -208,7 +355,7 @@ class Test(testing.AutoTest):
         
         self.assertCountEqual(list(tsample.sourcevolumes.keys()), reagent_instances)
         
-        self.assertTrue(S.SampleList(reagent_instances) == S.SampleList(reagents))
+        self.assertTrue(SampleList(reagent_instances) == SampleList(reagents))
         
         c2 = DistributionConverter(reagents=reagent_instances, 
                                        sourcefields=fields)

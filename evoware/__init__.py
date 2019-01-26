@@ -33,9 +33,10 @@ from evoware.plate import PlateFormat, PlateError, Plate
 from evoware.plateindex import PlateIndex, PlateIndexError
 plates = PlateIndex()
 
-from evoware.samples import Sample, SampleList, SampleError, \
-                            SampleValidationError
+from evoware.samples import Sample, SampleList, SampleError
 from evoware.targetsample import TargetSample
+from evoware.sampleconverters import SampleConverter, DistributionConverter, \
+                                     PickingConverter, SampleValidationError
 from evoware.sampleworklist import SampleWorklist
 
 # from evoware.cherrypicking import SourceIndex, TargetIndex, CherryWorklist, IndexFileError
