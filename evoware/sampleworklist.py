@@ -56,6 +56,9 @@ class SampleWorklist(W.Worklist):
             reagentkeys (tuple of str): source sample IDs (column headers) to
                 process; defaults to all
             wash (bool): include wash / tip change statement after dispense
+            
+        Todo:
+            support limited wash only after each column/reagent has been processed
         """
         keys = reagentkeys or self.getReagentKeys(targetsamples)
         
