@@ -41,7 +41,7 @@ class SampleConverter(object):
         
         Args: 
             plateindex (`PlateIndex`): mapping plate IDs to Plate instances. 
-               This defaults to the central `evoware.plates`
+               This defaults to the central `plates` index defined in `evoware`
         """
         self.plateindex = plateindex
         
@@ -77,7 +77,7 @@ class SampleConverter(object):
 
     def isvalid(self, sample):
         """
-        Return `True` if entry is a valid sample.
+        Return True if entry is a valid sample.
         
         Returns:
             bool: True, if entry is a valid Sample instance

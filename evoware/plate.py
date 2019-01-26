@@ -210,7 +210,7 @@ class Plate(object):
       Labware type strings such as (by default) "96 Well Microplate".
     
     The `byLabel()` method informs whether or not a plate is identified by 
-    rackLabel (`True`) or by barcode (`False`). The `preferredID()` method
+    rackLabel (True) or by barcode (False). The `preferredID()` method
     tries to completely hide this whole barcode vs. label complexity and will
     return a simple ID which can be either rackLabel or barcode, whatever seems
     appropriate.

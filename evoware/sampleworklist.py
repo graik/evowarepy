@@ -17,7 +17,7 @@ class SampleWorklist(W.Worklist):
         Args:
             src (`Sample`): source sample instance
             dst (`Sample`): destination sample instance
-            volume (`int` | `float`): volume to be transferred
+            volume (int | float): volume to be transferred
             wash (bool): include wash / tip change statement after dispense
         """
         self.A(src.plate.preferredID(), src.position, volume, 
@@ -43,12 +43,15 @@ class SampleWorklist(W.Worklist):
     
     def distributeSamples(self, targetsamples, reagentkeys=(), wash=True):
         """
-        Variable reagent transfer to many target samples. The `reagentkeys`
+        Variable reagent transfer to many target samples. The ``reagentkeys``
         field allows to limit the source positions / samples and can also be
         used to spefify the order in which the transfer is occuring. Otherwise
-        all the source samples listed in any of the given `targetsamples` will
+        all the source samples listed in any of the given ``targetsamples`` will
         be transferred. In order to optimize tip and plate handling, transfers
         are grouped by source reagent.
+        
+        Todo:
+            support limited wash only after each column/reagent has been processed
         
         Args:
             targetsamples (list of `TargetSample`), destination positions with 
@@ -56,9 +59,6 @@ class SampleWorklist(W.Worklist):
             reagentkeys (tuple of str): source sample IDs (column headers) to
                 process; defaults to all
             wash (bool): include wash / tip change statement after dispense
-            
-        Todo:
-            support limited wash only after each column/reagent has been processed
         """
         keys = reagentkeys or self.getReagentKeys(targetsamples)
         

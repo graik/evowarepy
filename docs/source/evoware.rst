@@ -19,6 +19,7 @@ Classes for handling and identifying samples and plates or labware.
    PlateFormat
    Plate
    PlateIndex
+   plates
 
 
 Evoware Worklists

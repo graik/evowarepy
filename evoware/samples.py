@@ -30,6 +30,7 @@ class Sample(object):
     
     For convenience, Sample can be imported directly from the evoware package
     name space:: 
+
         from evoware import Sample
 
     *Properties:*
@@ -44,13 +45,15 @@ class Sample(object):
         
         * `position` - int, well position, e.g. number 1 to 96
         * `position2D` - str, human readable well position (e.g. 'A1')
-    
+
     *Usage:*
     
             >>> s = Sample('BBa1000#a', plate=Plate('plateA'), pos='B1')
-        is the same as:
-            >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)
-        and results in:
+        is the same as
+        
+            >>> s = Sample('BBa1000', 'a', Plate('plateA'), 9)        
+        and results in
+        
             >>> s.id
                'BBa1000'
             >>> s.subid
@@ -64,8 +67,10 @@ class Sample(object):
     
         Arbitrary additional fields can be given as keyword arguments to the
         constructor:
+        
             >>> s = Sample('BBa2000#1', plate=Plate('plateB'), pos=1, temperature=25)
-        ...results in an additional 'temperature' field:
+        ... which results in an additional 'temperature' field:
+        
             >>> s.temperature
                 25
         
@@ -94,7 +99,7 @@ class Sample(object):
                    with equal content
             plate (`Plate` | str): Plate instance, or plate ID for looking up
                    plate from evoware.plates. If no plate is given, the
-                   default plate instance from `evoware.plates` will be
+                   default plate instance from ``evoware.plates`` will be
                    assigned.
         """        
         self._subid = str(U.intfloat2int(subid)).strip()

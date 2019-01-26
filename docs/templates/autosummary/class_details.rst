@@ -7,12 +7,11 @@
    :members:
    :show-inheritance:
    :special-members: __init__
-
+   
    {% block methods %}
-
    {% if methods %}
    .. rubric:: Methods Overview
-
+   
    .. autosummary::
       :nosignatures:
    

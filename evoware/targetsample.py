@@ -70,7 +70,7 @@ class TargetSample(S.Sample):
                    plate from evoware.plates. If no plate is given, the
                    default plate instance from `evoware.plates` will be
                    assigned.
-            sourcevolumes (`dict`): dict mapping source `Sample` 
+            sourcevolumes (dict): dict mapping source `Sample` 
                    instances to volume
         """
         self.sourcevolumes = {}
@@ -80,7 +80,7 @@ class TargetSample(S.Sample):
     def updateFields(self, sourcevolumes={}, **kwargs):
         """
         Keyword Args:
-            sourcevolumes (`dict`): dict mapping source `Sample` 
+            sourcevolumes (dict): dict mapping source `Sample` 
                    instances to volume
         """
         assert isinstance(sourcevolumes, dict)
