@@ -27,6 +27,8 @@
    .. rubric:: Attributes Overview
 
    .. autosummary::
+      :nosignatures:
+   
    {% for item in attributes %}
       ~{{ name }}.{{ item }}
    {%- endfor %}

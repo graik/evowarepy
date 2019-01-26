@@ -11,7 +11,7 @@ Classes for handling and identifying samples and plates or labware.
 .. autosummary::
    :nosignatures:
    :toctree: evoware
-   :template: autosummary/class_with_details.rst
+   :template: autosummary/class_details.rst
    
    Sample
    TargetSample
@@ -31,7 +31,7 @@ instructions for the robot.
 .. autosummary::
    :nosignatures:
    :toctree: evoware
-   :template: autosummary/class_with_details.rst
+   :template: autosummary/class_details.rst
 
    Worklist
    SampleWorklist
