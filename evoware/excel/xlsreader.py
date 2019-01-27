@@ -348,7 +348,6 @@ class XlsReader(object):
 ######################
 ### Module testing ###
 from evoware import testing
-import tempfile
 
 class Test(testing.AutoTest):
     """Test XlsReader"""
