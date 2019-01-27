@@ -105,32 +105,34 @@ def cleanOptions( options ):
 # MAIN
 ###########################
 
-try:
-    if len(sys.argv) < 2:
-        _use( _defaultOptions() )
+if __name__ == '__main__':
         
-    options = U.cmdDict( _defaultOptions() )
-    
     try:
-        options = cleanOptions(options) 
-    except KeyError as why:
-        logging.error('missing option: ' + why)
-        _use(options)
+        if len(sys.argv) < 2:
+            _use( _defaultOptions() )
+            
+        options = U.cmdDict( _defaultOptions() )
+        
+        try:
+            options = cleanOptions(options) 
+        except KeyError as why:
+            logging.error('missing option: ' + str(why))
+            _use(options)
+        
+        parts = P.SourceIndex()
+        for f in options['src']:
+            parts.readExcel(f)
+        
+        targets = P.TargetIndex(srccolumns=['vector', 'fragment1', 'fragment2', 
+                                            'fragment3', 'fragment4'])
+        targets.readExcel(options['i'])
+        
+        cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
+        cwl.toWorklist(byLabel=options['useLabel'])
+        cwl.close()
     
-    parts = P.SourceIndex()
-    for f in options['src']:
-        parts.readExcel(f)
-    
-    targets = P.TargetIndex(srccolumns=['vector', 'fragment1', 'fragment2', 
-                                        'fragment3', 'fragment4'])
-    targets.readExcel(options['i'])
-    
-    cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
-    cwl.toWorklist(byLabel=options['useLabel'])
-    cwl.close()
-
-except Exception as why:
-    if 'dialogs' in options:
-        D.lastException('Error generating Worklist')
-    else:    
-        raise
+    except Exception as why:
+        if 'dialogs' in options:
+            D.lastException('Error generating Worklist')
+        else:    
+            raise

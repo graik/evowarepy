@@ -102,7 +102,7 @@ import sys
 ## CONFIGURATION -- adapt the following values to your own Python package
 
 #: list all packages from which test cases are collected by default (-p)
-DEFAULT_PACKAGES = ['evoware', 'evoware.excel']
+DEFAULT_PACKAGES = ['evoware', 'evoware.excel', 'evoware.scripts']
 
 #: tests with the following tags are excluded by default (override with -e)
 DEFAULT_EXCLUDE  = ['old', 'extra']

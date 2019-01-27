@@ -27,7 +27,7 @@ class UtilError( Exception ):
     pass
 
 
-def absfile( filename, resolveLinks=1 ):
+def absfile( filename, resolveLinks=True, cwd=None ):
     """
     Get absolute file path::
       - expand ~ to user home, change
@@ -38,22 +38,54 @@ def absfile( filename, resolveLinks=1 ):
     Args:
         filename (str): name of file
         resolveLinks (1|0): eliminate any symbolic links (default: 1)
+        cwd (str): alternative current working directory to use for non-absolute
+            input file/path names (defaults to actual current workking dir)
     
     Returns: 
         str: absolute path or filename
 
-    Raises: ToolsError: if a ~user part does not translate to an existing path
+    Raises: UtilError: if a ~user part does not translate to an existing path
     """
     if not filename:
         return filename
-    r = osp.abspath( osp.expanduser( filename ) )
+    
+    r = osp.expanduser(filename)
+    if cwd and not osp.isabs(r):
+        r = osp.join(cwd,r)
+    
+    r = osp.abspath(r)
 
     if '~' in r:
         raise UtilError('Could not expand user home in %s' % filename)
 
     if resolveLinks:
         r = osp.realpath( r )
-    r = osp.normpath(r)
+    return r
+
+def existingFile(filename:str, cwd:str=None, resolve:bool=True, errmsg:str=''):
+    """
+    Convert input filename to absolute path and verify existence of that file.
+    
+    Args:
+        filename (str): name of file
+        cwd (str): alternative current working directory to use for non-absolute
+            input file/path names (defaults to actual current workking dir)
+        resolve (bool): eliminate any symbolic links (default: True)
+        errmsg (str): alternative error message if file is not found
+    
+    Returns:
+       str: absolute path or filename (see also `absfile`)
+       
+    Raises:
+       UtilError: if a ~user part does not translate to an existing user or path
+       FileNotFoundError: if the file does not exist 
+    """
+    r = absfile(filename, resolveLinks=resolve, cwd=cwd)
+    
+    if not osp.exists(r):
+        msg = errmsg or 'Cannot find file: '
+        raise FileNotFoundError(msg + r)
+    
     return r
 
 
@@ -81,7 +113,7 @@ def testRoot( subfolder='' ):
     synbiolib/py/.
     
     Args:
-        subfolder (str): sub-folder within testroot
+        subfolder (str): sub-folder or file within testroot
     
     Returns: 
         str: folder containing testdata

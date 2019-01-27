@@ -101,51 +101,53 @@ import evoware as E
 
 import evoware.fileutil as F
 
-TESTING = True
-
-try:
-
-    options = _defaultOptions()
-    if not TESTING:
-        if len(sys.argv) < 2:
-            _use( _defaultOptions() )
-            
-        options = U.cmdDict( _defaultOptions() )
-    else:    
-        ## TESTING
-        options['i'] = F.testRoot('targetlist_PCR.xls')
-        options['src'] = [ F.testRoot('primers.xls'), F.testRoot('partslist.xls')]
-        options['o'] = F.testRoot('/tmp/evoware_test.gwl')
-        options['columns'] = ['primer1', 'primer2', 'template']    
+if __name__ == '__main__':
+        
+    TESTING = True
     
     try:
-        options = cleanOptions(options) 
-    except KeyError as why:
-        logging.error('missing option: ' + why)
-        _use(options)
     
-    srcsamples = S.SampleList()
-    
-    for f in options['src']:
-        srcxls = X.XlsReader(byLabel=options['useLabel'])
-        srcxls.read( f )
-        srcsamples += S.SampleList(srcxls.rows)
+        options = _defaultOptions()
+        if not TESTING:
+            if len(sys.argv) < 2:
+                _use( _defaultOptions() )
+                
+            options = U.cmdDict( _defaultOptions() )
+        else:    
+            ## TESTING
+            options['i'] = F.testRoot('targetlist_PCR.xls')
+            options['src'] = [ F.testRoot('primers.xls'), F.testRoot('partslist.xls')]
+            options['o'] = F.testRoot('/tmp/evoware_test.gwl')
+            options['columns'] = ['primer1', 'primer2', 'template']    
         
-    xls = X.DistributionXlsReader(byLabel=options['useLabel'])
-    xls.read(options['i'])
+        try:
+            options = cleanOptions(options) 
+        except KeyError as why:
+            logging.error('missing option: ' + str(why))
+            _use(options)
+        
+        srcsamples = S.SampleList()
+        
+        for f in options['src']:
+            srcxls = X.XlsReader(byLabel=options['useLabel'])
+            srcxls.read( f )
+            srcsamples += S.SampleList(srcxls.rows)
+            
+        xls = X.DistributionXlsReader(byLabel=options['useLabel'])
+        xls.read(options['i'])
+        
+        srcsamples += xls.reagents
     
-    srcsamples += xls.reagents
-
-    columns = options['columns']
-    converter = C.DistributionConverter(reagents=srcsamples, sourcefields=columns)
+        columns = options['columns']
+        converter = C.DistributionConverter(reagents=srcsamples, sourcefields=columns)
+        
+        targets = S.SampleList(xls.rows, converter=converter)
+        
+        with W.SampleWorklist(options['o'], reportErrors=options['dialogs']) as wl:
+            wl.distributeSamples(targets)
     
-    targets = S.SampleList(xls.rows, converter=converter)
-    
-    with W.SampleWorklist(options['o'], reportErrors=options['dialogs']) as wl:
-        wl.distributeSamples(targets)
-
-except Exception as why:
-    if options['dialogs']:
-        D.lastException('Error generating Worklist')
-    else:    
-        raise
+    except Exception as why:
+        if options['dialogs']:
+            D.lastException('Error generating Worklist')
+        else:    
+            raise

@@ -107,31 +107,33 @@ def cleanOptions( options ):
 # MAIN
 ###########################
 
-try:
-    if len(sys.argv) < 2:
-        _use( _defaultOptions() )
-        
-    options = U.cmdDict( _defaultOptions() )
-    
-    try:
-        options = cleanOptions(options) 
-    except KeyError as why:
-        logging.error('missing option: ' + why)
-        _use(options)
-    
-    parts = P.SourceIndex()
-    for f in options['src']:
-        parts.readExcel(f)
-    
-    targets = P.TargetIndex(srccolumns=['template', 'primer1', 'primer2'])
-    targets.readExcel(options['i'])
-    
-    cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
-    cwl.toWorklist(byLabel=options['useLabel'])
-    cwl.close()
+if __name__ == '__main__':
 
-except Exception as why:
-    if 'dialogs' in options:
-        D.lastException('Error generating Worklist')
-    else:    
-        raise
+    try:
+        if len(sys.argv) < 2:
+            _use( _defaultOptions() )
+            
+        options = U.cmdDict( _defaultOptions() )
+        
+        try:
+            options = cleanOptions(options) 
+        except KeyError as why:
+            logging.error('missing option: ' + str(why))
+            _use(options)
+        
+        parts = P.SourceIndex()
+        for f in options['src']:
+            parts.readExcel(f)
+        
+        targets = P.TargetIndex(srccolumns=['template', 'primer1', 'primer2'])
+        targets.readExcel(options['i'])
+        
+        cwl = P.CherryWorklist(options['o'], targets, parts, reportErrors=True)
+        cwl.toWorklist(byLabel=options['useLabel'])
+        cwl.close()
+    
+    except Exception as why:
+        if 'dialogs' in options:
+            D.lastException('Error generating Worklist')
+        else:    
+            raise

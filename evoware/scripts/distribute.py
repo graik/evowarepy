@@ -13,32 +13,17 @@
 ##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
-"""Protoype script for generating PCR setup worklist from Excel files"""
-
-import sys, logging
-
-import evoware.util as U
-import evoware.fileutil as F
-import evoware.dialogs as D
-
-import evoware.sampleworklist as W
-import evoware.samples as S
-import evoware.excel as X
-import evoware.sampleconverters as C
-
-def _use( options ):
-    print("""
-distribute.py -- Generate (variable) reagent distribution worklist from Excel file.
+"""
+distribute.py -- Generate reagent distribution worklist from Excel file.
 
 Syntax (non-interactive):
     distribute.py -i <distribute.xls> -o <output.worklist> 
                   [-barcode -src <sourcesamples.xls> -columns <name1 name2>]
                 
 Syntax (interactive):
-    pcrsetup.py -dialogs [-p <project directory>
-                -o <output.worklist> -i <distribute.xls> -src <sources.xls>
-                -barcode]
-
+    distribute.py -dialogs [-p <project directory>
+                  -o <output.worklist> -i <distribute.xls> -src <sources.xls>
+                  -barcode]
 
 Options:
     -dialogs  generate file open dialogs for any missing input files
@@ -54,101 +39,160 @@ Options:
               rather than labware label
     -columns  explicitely specify which source columns to process (default: all)
 
+    -test     run built-in test case
+    -debug    do not delete temporary files after running test
+
 If -dialogs is given, a missing -i or -o option triggers a file open
 dialog(s) for the appropriate file(s).
+"""
 
-Currently defined options:
-""")
-    for key, value in options.items():
-        print("\t-",key, "\t",value)
+import sys, logging, os
 
-    sys.exit(0)
+import evoware.util as U
+import evoware.fileutil as F
+import evoware.dialogs as D
+
+import evoware.sampleworklist as W
+import evoware.samples as S
+import evoware.excel as X
+import evoware.sampleconverters as C
 
 def _defaultOptions():
     return {}
 
 def cleanOptions( options ):
     options['dialogs'] = 'dialogs' in options
-    options['p'] = F.absfile( options.get('p', ''))
+    cwd = options.get('p',None)
     
     if options['dialogs']:
         
         if not 'i' in options:
             options['i'] = D.askForFile(defaultextension='*.xls', 
-                            filetypes=(('Excel classic','*.xls'),('Excel','*.xlsx'),('All files','*.*')), 
+                            filetypes=(('Excel classic','*.xls'),
+                                       ('Excel','*.xlsx'),('All files','*.*')), 
                             initialdir=options['p'], 
                             multiple=False, 
                             title="Distribution Table")
         
         if not 'o' in options:
             options['o'] = D.askForFile(defaultextension='*.gwl', 
-                            filetypes=(('Evo Worklist','*.gwl'),('Text file','*.txt'),('All files','*.*')), 
+                            filetypes=(('Evo Worklist','*.gwl'),
+                                       ('Text file','*.txt'),
+                                       ('All files','*.*')), 
                             initialdir=options['p'], 
                             multiple=False,
                             newfile=True,
                             title="Save Worklist output file as")
     
     
-    options['i'] = F.absfile(options['i'])
+    options['i'] = F.existingFile(options['i'], cwd=cwd, 
+                                  errmsg='Cannot find input (-i) file ')
+    
     if 'src' in options:
-        options['src'] = [ F.absfile(options['src']) ]
-    options['o'] = F.absfile(options['o'])
+        msg = 'Cannot file source (-src) file '
+        options['src'] = [ F.existingFile(options['src'], cwd=cwd, errmsg=msg) ]
+        
+    options['o'] = F.absfile(options['o'], cwd=cwd)
     
     options['columns'] = U.tolist(options.get('columns', []))
     
     options['useLabel'] = 'barcode' not in options
     return options
 
-def _testing(options):
-    import evoware.fileutil as F
-    options['i'] = F.testRoot('distribution.xls')
-    options['o'] = F.testRoot('/tmp/evoware_test.gwl')
-    options['columns'] = ['buffer01']
-    return options    
-
 ###########################
 # MAIN
 ###########################
-import evoware as E
-TESTING = True
-
-try:
-    options = _defaultOptions()
-    if TESTING:
-        options = _testing(options)
-    else:
-        if len(sys.argv) < 2:
-            _use( _defaultOptions() )
-            
-        options = U.cmdDict( _defaultOptions() )
-    
+def run( options ):
     try:
-        options = cleanOptions(options) 
-    except KeyError as why:
-        logging.error('missing option: ' + why)
-        _use(options)
-    
-    xls = X.DistributionXlsReader(byLabel=options['useLabel'])
-    xls.read(options['i'])
-
-    reagents = xls.reagents
-    
-    if 'src' in options:
-        srcxls = X.XlsReader(byLabel=options['useLabel'])
-        srcxls.read( options['f'] )
-        reagents = S.SampleList(srcxls.rows)
+        try:
+            options = cleanOptions(options) 
+        except KeyError as why:
+            logging.error('missing option: ' + str(why))
+            U.scriptusage(options, doc=__doc__, force=True)
         
-    columns = options['columns']
+        xls = X.DistributionXlsReader(byLabel=options['useLabel'])
+        xls.read(options['i'])
     
-    converter = C.DistributionConverter(reagents=reagents, sourcefields=columns)
+        reagents = xls.reagents
+        
+        if 'src' in options:
+            srcxls = X.XlsReader(byLabel=options['useLabel'])
+            srcxls.read( options['src'] )
+            reagents = S.SampleList(srcxls.rows)
+            
+        columns = options['columns']
+        
+        converter = C.DistributionConverter(reagents=reagents, 
+                                            sourcefields=columns)
+        
+        targets = S.SampleList(xls.rows, converter=converter)
+        
+        with W.SampleWorklist(options['o'], 
+                              reportErrors=options['dialogs']) as wl:
+            wl.distributeSamples(targets)
     
-    targets = S.SampleList(xls.rows, converter=converter)
-    
-    with W.SampleWorklist(options['o'], reportErrors=options['dialogs']) as wl:
-        wl.distributeSamples(targets)
+    except Exception as why:
+        if options['dialogs']:
+            D.lastException('Error generating Worklist')
+        else:    
+            logging.error(U.lastError())
 
-except Exception as why:
-    if options['dialogs']:
-        D.lastException('Error generating Worklist')
-    else:    
-        raise
+######################
+# Script testing
+######################
+from evoware import testing
+
+class Test(testing.AutoTest):
+    """Test distribute.py"""
+
+    TAGS = [ testing.SCRIPT ]
+
+    def prepare(self):
+        """Called once"""
+        import tempfile    
+        self.f_project = tempfile.mkdtemp(prefix='evoware_distribute_')
+
+    def cleanUp(self):
+        """Called after all tests are done, except DEBUG==True"""
+        import evoware.fileutil as F
+        F.tryRemove(self.f_project, verbose=(self.VERBOSITY>1), tree=1)
+
+    def test_distribute(self):
+        """distribute.py -- distribution from single Excel file"""
+        import evoware.fileutil as F
+        import os.path as O
+        
+        options = {'i': F.testRoot('distribution.xls'), 
+                   'o': 'distribute.gwl', 
+                   'p': self.f_project,
+                   'columns': ['buffer01']        
+                   }
+        
+        self.f_out = F.absfile(self.f_project + '/' + options['o'])
+        
+        run(options)
+        
+        self.assertTrue(O.exists(self.f_out))
+        
+        with open(self.f_out,'r') as f1, \
+             open(F.testRoot('results/distribute.gwl'),'r') as f2:
+            
+            self.assertEqual(f1.readlines(), f2.readlines())
+    
+    def test_distribute_sources(self):
+        """distribute.py -- distribution with multiple sources"""
+        pass
+        
+
+if __name__ == '__main__':
+    
+    ## print usage and exit if there is less than 1 command line argument
+    U.scriptusage(_defaultOptions(), doc=__doc__)  
+    
+    options = U.cmdDict(_defaultOptions())  ## parse commandline options
+    
+    if 'test' in options:
+        testing.localTest(debug=('debug' in options))
+        sys.exit(0)
+    
+    run(options)

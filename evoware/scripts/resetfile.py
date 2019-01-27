@@ -20,7 +20,7 @@ import sys, os
 import evoware.fileutil as F
 import evoware.dialogs as D
 
-def _use( options ):
+def _use():
     print("""
 resetfile.py -- reset file to empty (0 Byte length)
 
@@ -35,16 +35,18 @@ exist, it will be created.
 ###########################
 # MAIN
 ###########################
-f = ''
-
-try:
-    if len(sys.argv) < 2:
-        _use()
+if __name__ == '__main__':
+    
+    f = ''
+    
+    try:
+        if len(sys.argv) < 2:
+            _use()
+            
+        f = F.absfile(sys.argv[1])
         
-    f = F.absfile(sys.argv[1])
-    
-    h = open(f, 'w')
-    h.close()
-    
-except Exception as why:
-    D.lastException('Error resetting file %r' % f)
+        h = open(f, 'w')
+        h.close()
+        
+    except Exception as why:
+        D.lastException('Error resetting file %r' % f)

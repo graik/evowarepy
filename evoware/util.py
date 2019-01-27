@@ -57,6 +57,35 @@ def lastError():
 
     return result
 
+def scriptusage(options:dict={}, doc:str='', minargs:int=1, exit:bool=True, 
+                force:bool=False):
+    """
+    Print a usage help screen to standard out and exit unless there are
+    enough command line arguments given. This method only makes sense when
+    run from the __main__ context of a python script.
+    
+    Args:
+        options (dict): default options to be listed in usage text
+        doc (str): multi-line usage text to print as a help screen
+        minargs (int): minimum number of command line arguments to expect 
+           (without counting the script name itself);
+        exit (bool): exit script after printing help screen
+        force (bool): print help and exit no matter what commandline looks like
+    """
+    
+    if len(sys.argv) > minargs and not force:
+        return
+    
+    print(doc)
+    
+    if len(options) > 1:
+        print('Currently defined options:\n')
+        for key, value in options.items():
+            print("\t-",key, "\t",value)
+
+    if exit: 
+        sys.exit(0)
+
 
 def file2dic( filename ):
     """
