@@ -42,8 +42,13 @@ Options:
     -test     run built-in test case
     -debug    do not delete temporary files after running test
 
-If -dialogs is given, a missing -i or -o option triggers a file open
+If -dialogs option is given, a missing -i or -o option will trigger a file open
 dialog(s) for the appropriate file(s).
+
+The position of reagents (plate or labware and well) can be specified 
+in the same input (-i) excel file using the "reagent" keyword in the header. 
+Or it can be specified in one or several additional source (-src) Excel files
+using the regular "ID : (sub-ID) : plate : pos" column layout. 
 """
 
 import sys, logging, os
@@ -89,8 +94,10 @@ def cleanOptions( options ):
                                   errmsg='Cannot find input (-i) file ')
     
     if 'src' in options:
-        msg = 'Cannot file source (-src) file '
-        options['src'] = [ F.existingFile(options['src'], cwd=cwd, errmsg=msg) ]
+        options['src'] = U.tolist(options['src'])
+        msg = 'Cannot find source (-src) file '
+        options['src'] = [ F.existingFile(f, cwd=cwd, errmsg=msg)
+                           for f in options['src'] ]
         
     options['o'] = F.absfile(options['o'], cwd=cwd)
     
@@ -99,9 +106,9 @@ def cleanOptions( options ):
     options['useLabel'] = 'barcode' not in options
     return options
 
-###########################
-# MAIN
-###########################
+#####################################
+# MAIN Method (also used for testing)
+#####################################
 def run( options ):
     try:
         try:
@@ -116,9 +123,10 @@ def run( options ):
         reagents = xls.reagents
         
         if 'src' in options:
-            srcxls = X.XlsReader(byLabel=options['useLabel'])
-            srcxls.read( options['src'] )
-            reagents = S.SampleList(srcxls.rows)
+            for f in options['src']:
+                srcxls = X.XlsReader(byLabel=options['useLabel'])
+                srcxls.read( f )
+                reagents.extend( S.SampleList(srcxls.rows) )
             
         columns = options['columns']
         
@@ -136,9 +144,10 @@ def run( options ):
             D.lastException('Error generating Worklist')
         else:    
             logging.error(U.lastError())
+            raise
 
 ######################
-# Script testing
+# Script test fixture
 ######################
 from evoware import testing
 
@@ -157,17 +166,10 @@ class Test(testing.AutoTest):
         import evoware.fileutil as F
         F.tryRemove(self.f_project, verbose=(self.VERBOSITY>1), tree=1)
 
-    def test_distribute(self):
-        """distribute.py -- distribution from single Excel file"""
+    def generictest(self, options):
         import evoware.fileutil as F
         import os.path as O
-        
-        options = {'i': F.testRoot('distribution.xls'), 
-                   'o': 'distribute.gwl', 
-                   'p': self.f_project,
-                   'columns': ['buffer01']        
-                   }
-        
+                
         self.f_out = F.absfile(self.f_project + '/' + options['o'])
         
         run(options)
@@ -178,10 +180,30 @@ class Test(testing.AutoTest):
              open(F.testRoot('results/distribute.gwl'),'r') as f2:
             
             self.assertEqual(f1.readlines(), f2.readlines())
-    
+        
+
+    def test_distribute(self):
+        """distribute.py; distribution from single Excel file"""
+        import evoware.fileutil as F
+        
+        options = {'i': F.testRoot('distribution.xls'), 
+                   'o': 'distribute1.gwl', 
+                   'p': self.f_project,
+                   'columns': ['buffer01']        
+                   }
+        self.generictest(options)
+        
     def test_distribute_sources(self):
-        """distribute.py -- distribution with multiple sources"""
-        pass
+        """distribute.py; distribution with seperate reagent source file"""
+        import evoware.fileutil as F
+        
+        options = {'i': F.testRoot('distribution.xls'), 
+                   'src': F.testRoot('distribution_sources.xls'),
+                   'o': 'distribute2.gwl',
+                   'p': self.f_project,
+                   'columns': ['buffer01']        
+                   }
+        self.generictest(options)
         
 
 if __name__ == '__main__':

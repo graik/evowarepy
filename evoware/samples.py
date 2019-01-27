@@ -289,6 +289,7 @@ class SampleList(MutableSequence):
         return """<SampleList %s>""" % self._list
 
     def insert(self, i, val):
+        assert isinstance(val, Sample) or isinstance(val, dict)
         val = self._converter.tosample(val)
         self._list.insert(i, val)
 
