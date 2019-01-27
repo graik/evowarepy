@@ -17,13 +17,13 @@
 distribute.py -- Generate reagent distribution worklist from Excel file.
 
 Syntax (non-interactive):
-    distribute.py -i <distribute.xls> -o <output.worklist> 
-                  [-barcode -src <sourcesamples.xls> -columns <name1 name2>]
+    distribute.py -i <distribute.xls> -o <output.worklist>
+                 [-barcode -src <sourcesamples.xls> -columns <name1 name2>]
                 
 Syntax (interactive):
-    distribute.py -dialogs [-p <project directory>
-                  -o <output.worklist> -i <distribute.xls> -src <sources.xls>
-                  -barcode]
+    distribute.py -dialogs 
+                 [-p <project directory> -barcode 
+                 -o <output.worklist> -i <distribute.xls> -src <sources.xls> ]
 
 Options:
     -dialogs  generate file open dialogs for any missing input files
@@ -32,7 +32,7 @@ Options:
     
     -i        input excel file listing target samples and which reagent volumes 
               to dispense where
-    -src      (optional) specify reagent samples in separate excel file
+    -src      (optional) specify reagent samples in separate excel file(s)
     -o        output file name for generated worklist
               
     -barcode  interpret plate IDs in all tables as barcode ($Labware.ID$) 
@@ -204,7 +204,6 @@ class Test(testing.AutoTest):
                    'columns': ['buffer01']        
                    }
         self.generictest(options)
-        
 
 if __name__ == '__main__':
     
