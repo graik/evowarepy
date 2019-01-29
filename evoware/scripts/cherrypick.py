@@ -1,38 +1,28 @@
 #!/usr/bin/env python
 ##  evoware/py -- python modules for Evoware scripting
 ##   Copyright 2014 - 2019 Raik Gruenberg
-##
-##   Licensed under the Apache License, Version 2.0 (the "License");
-##   you may not use this file except in compliance with the License.
-##   You may obtain a copy of the License at
-##
-##       http://www.apache.org/licenses/LICENSE-2.0
-##
-##   Unless required by applicable law or agreed to in writing, software
-##   distributed under the License is distributed on an "AS IS" BASIS,
-##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##   See the License for the specific language governing permissions and
-##   limitations under the License.
 """
-distribute.py -- Generate reagent distribution worklist from Excel file.
+cherrypick.py -- Combine (hit-picking) samples from various positions
 
 Syntax (non-interactive):
-    distribute.py -i <distribute.xls> -o <output.worklist>
-                 [-barcode -src <sourcesamples.xls> -columns <name1 name2>]
+    cherrypick.py -i <reactions.xls> -o <output.worklist> 
+                  -src <sources.xls>
+                  [-barcode -columns <name1 name2>]
                 
 Syntax (interactive):
-    distribute.py -dialogs 
-                 [-p <project directory> -barcode 
-                 -o <output.worklist> -i <distribute.xls> -src <sources.xls> ]
+    cherrypick.py -dialogs [-p <project directory>
+                -o <output.worklist> -i <reactions.xls> -src <sources.xls>
+                -barcode]
+
 
 Options:
     -dialogs  generate file open dialogs for any missing input files
               This option also activates user dialog-based error reporting.
     -p        default project directory for input and output files
     
-    -i        input excel file listing target samples and which reagent volumes 
-              to dispense where
-    -src      (optional) specify reagent samples in separate excel file(s)
+    -i        input excel file listing target samples and which source samples 
+              (IDs) should be cherry-picked into each of them
+    -src      source samples and their positions
     -o        output file name for generated worklist
               
     -barcode  interpret plate IDs in all tables as barcode ($Labware.ID$) 
@@ -42,16 +32,11 @@ Options:
     -test     run built-in test case
     -debug    do not delete temporary files after running test
 
-If -dialogs option is given, a missing -i or -o option will trigger a file open
+If -dialogs is given, a missing -i, -src or -o option triggers a file open
 dialog(s) for the appropriate file(s).
-
-The position of reagents (plate or labware and well) can be specified 
-in the same input (-i) excel file using the "reagent" keyword in the header. 
-Or it can be specified in one or several additional source (-src) Excel files
-using the regular "ID : (sub-ID) : plate : pos" column layout. 
 """
 
-import sys, logging, os
+import sys, logging
 
 import evoware.util as U
 import evoware.fileutil as F
@@ -59,8 +44,9 @@ import evoware.dialogs as D
 
 import evoware.sampleworklist as W
 import evoware.samples as S
-import evoware.excel as X
 import evoware.sampleconverters as C
+import evoware.excel as X
+import evoware.fileutil as F
 
 def _defaultOptions():
     return {}
@@ -77,8 +63,17 @@ def cleanOptions( options ):
                                        ('Excel','*.xlsx'),('All files','*.*')), 
                             initialdir=cwd, 
                             multiple=False, 
-                            title="Distribution Table")
+                            title="Cherrypicking Table")
         
+        if not 'src' in options:
+            options['src'] = D.askForFile(defaultextension='*.xls', 
+                                filetypes=(('Excel classic','*.xls'),
+                                           ('Excel','*.xlsx'),
+                                           ('All files','*.*')), 
+                                initialdir=cwd, 
+                                multiple=True, 
+                                title="Source samples and their locations")
+
         if not 'o' in options:
             options['o'] = D.askForFile(defaultextension='*.gwl', 
                             filetypes=(('Evo Worklist','*.gwl'),
@@ -90,15 +85,14 @@ def cleanOptions( options ):
                             title="Save Worklist output file as")
     
     
-    options['i'] = F.existingFile(options['i'], cwd=cwd, 
-                                  errmsg='Cannot find input (-i) file ')
-    
-    if 'src' in options:
-        options['src'] = U.tolist(options['src'])
-        msg = 'Cannot find source (-src) file '
-        options['src'] = [ F.existingFile(f, cwd=cwd, errmsg=msg)
-                           for f in options['src'] ]
-        
+    options['i'] = F.existingFile(options['i'], cwd=cwd,
+                        errmsg='Cannot find cherrypicking input (-i) file.')
+
+    options['src'] = U.tolist(options['src'])
+    msg = 'Cannot find source (-src) file '
+    options['src'] = [ F.existingFile(f, cwd=cwd, errmsg=msg)
+                       for f in options['src'] ]
+
     options['o'] = F.absfile(options['o'], cwd=cwd)
     
     options['columns'] = U.tolist(options.get('columns', []))
@@ -109,29 +103,33 @@ def cleanOptions( options ):
 #####################################
 # MAIN Method (also used for testing)
 #####################################
-def run( options ):
-    try:
+
+def run(options):
+        
+    try:    
         try:
             options = cleanOptions(options) 
         except KeyError as why:
             logging.error('missing option: ' + str(why))
             U.scriptusage(options, doc=__doc__, force=True)
         
+        srcsamples = S.SampleList()
+        
+        for f in options['src']:
+            srcxls = X.XlsReader(byLabel=options['useLabel'])
+            srcxls.read( f )
+            srcsamples += S.SampleList(srcxls.rows)
+            
         xls = X.DistributionXlsReader(byLabel=options['useLabel'])
         xls.read(options['i'])
+        
+        srcsamples += xls.reagents
     
-        reagents = xls.reagents
-        
-        if 'src' in options:
-            for f in options['src']:
-                srcxls = X.XlsReader(byLabel=options['useLabel'])
-                srcxls.read( f )
-                reagents.extend( S.SampleList(srcxls.rows) )
-            
         columns = options['columns']
-        
-        converter = C.DistributionConverter(reagents=reagents, 
-                                            sourcefields=columns)
+        converter = C.PickingConverter(sourcesamples=srcsamples, 
+                                       sourcefields=columns,
+                                       defaultvolumes=xls.volumes,
+                                       )
         
         targets = S.SampleList(xls.rows, converter=converter)
         
@@ -142,7 +140,7 @@ def run( options ):
     except Exception as why:
         if options['dialogs']:
             D.lastException('Error generating Worklist')
-        else:    
+        else:
             logging.error(U.lastError())
             raise
 
@@ -152,14 +150,16 @@ def run( options ):
 from evoware import testing
 
 class Test(testing.AutoTest):
-    """Test distribute.py"""
+    """Test cherrypick.py"""
 
     TAGS = [ testing.SCRIPT ]
 
     def prepare(self):
         """Called once"""
         import tempfile    
-        self.f_project = tempfile.mkdtemp(prefix='evoware_distribute_')
+        import evoware
+        self.f_project = tempfile.mkdtemp(prefix='evoware_cherrypick_')
+        evoware.plates.clear()
 
     def cleanUp(self):
         """Called after all tests are done, except DEBUG==True"""
@@ -177,34 +177,37 @@ class Test(testing.AutoTest):
         self.assertTrue(O.exists(self.f_out))
         
         with open(self.f_out,'r') as f1, \
-             open(F.testRoot('results/distribute.gwl'),'r') as f2:
+             open(F.testRoot('results/cherrypick_simple.gwl'),'r') as f2:
             
             self.assertEqual(f1.readlines(), f2.readlines())
         
 
-    def test_distribute(self):
-        """distribute.py; distribution from single Excel file"""
+    def test_cherrypick_simple(self):
+        """cherrypick.py; cherrypicking from Excel files"""
         import evoware.fileutil as F
         
-        options = {'i': F.testRoot('distribution.xls'), 
-                   'o': 'distribute1.gwl', 
+        options = {'i': F.testRoot('targetlist_PCR.xls'), 
+                   'src': [F.testRoot('primers.xls'), 
+                           F.testRoot('partslist_simple.xls')],
+                   'o': 'cherrypicking.gwl',
                    'p': self.f_project,
-                   'columns': ['buffer01']        
-                   }
-        self.generictest(options)
-        
-    def test_distribute_sources(self):
-        """distribute.py; distribution with seperate reagent source file"""
-        import evoware.fileutil as F
-        
-        options = {'i': F.testRoot('distribution.xls'), 
-                   'src': F.testRoot('distribution_sources.xls'),
-                   'o': 'distribute2.gwl',
-                   'p': self.f_project,
-                   'columns': ['buffer01']        
+                   'columns' : ['primer1', 'primer2', 'template']
                    }
         self.generictest(options)
 
+    def test_cherrypick_flexibleIDs(self):
+        """cherrypick.py; cherrypicking with flexible sub-ID handling"""
+        import evoware.fileutil as F
+        
+        options = {'i': F.testRoot('targetlist_PCR.xls'), 
+                   'src': [F.testRoot('primers.xls'), 
+                           F.testRoot('partslist.xls')],
+                   'o': 'cherrypicking.gwl',
+                   'p': self.f_project,
+                   'columns' : ['primer1', 'primer2', 'template']
+                   }
+        self.generictest(options)
+      
 if __name__ == '__main__':
     
     ## print usage and exit if there is less than 1 command line argument
@@ -216,4 +219,4 @@ if __name__ == '__main__':
         testing.localTest(debug=('debug' in options))
         sys.exit(0)
     
-    run(options)
+    run(options.update({'debug':True}))

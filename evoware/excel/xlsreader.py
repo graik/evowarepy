@@ -358,8 +358,6 @@ class Test(testing.AutoTest):
         """Called once"""
         self.f_parts = F.testRoot('partslist.xls')
         self.f_primers = F.testRoot('primers.xls')
-        self.f_simple = F.testRoot('targetlist.xls')
-        self.f_pcr = F.testRoot('targetlist_PCR.xls')
         self.f_distribute = F.testRoot('distribution.xls')
 
     def cleanUp(self):
