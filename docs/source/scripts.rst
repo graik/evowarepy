@@ -11,4 +11,5 @@ Scripts that can be embedded in Evoware programs.
 
     resetfile
     distribute
+    cherrypick          
 

@@ -49,6 +49,9 @@ class DistributionXlsReader(X.XlsReader):
         `PickingConverter`, on the other hand, can read volumes either from a 
         seperate '<field>_volume' column or from the 'volume' : field record
         in the table header.
+    
+    Todo:
+        test case for volume record missing
     """
     
     def __init__(self, **kwarg):
@@ -114,9 +117,7 @@ class Test(testing.AutoTest):
     
     def cleanUp( self ):
         import evoware.fileutil as F
-        if not self.DEBUG:
-            F.tryRemove(self.f_worklist)
-    
+        F.tryRemove(self.f_worklist)
     
     def test_distributionxlsreader(self):
         from evoware.sampleconverters import DistributionConverter
