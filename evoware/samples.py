@@ -21,6 +21,37 @@ from evoware import PlateFormat, PlateError, Plate
 class SampleError(Exception):
     pass
 
+def normalize_sample_id(ids):
+        """
+        Normalizes input ID or (ID, sub-ID) tuple to standard ('ID', 'sub-ID')
+        tuple.
+        
+        Acceptable inputs are 'ID', or ('ID', 'sub-ID') or 'ID#subID'. int or 
+        float IDs or sub-IDs are also acceptable but will be cleaned up and
+        converted to str. "cleaned up" here means that float input 1.0 will be
+        converted first to int 1 and then str '1'.
+        
+        Args: 
+            ids (float | int | str | unicode or list thereof): input ID[,subID]
+        
+        Returns:
+            tuple: (str_ID, str_subID) or (str_ID, '') 
+        """
+        if type(ids) is str and '#' in ids:
+            ids = ids.split('#')
+
+        if type(ids) not in [tuple, list]:
+            ids = (ids,)
+
+        ids = [str(U.intfloat2int(x)).strip() for x in ids]
+        ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
+        
+        _id = ids[0] if len(ids) > 0 else ''
+        _subid = ids[1] if len(ids) > 1 else ''
+        
+        return _id, _subid
+
+
 class Sample(object):
     """
     Representation of a single well / sample.
@@ -189,23 +220,13 @@ class Sample(object):
         """
         Assign new ID and (optionally) sub-id.
         
-        Normalizes input ID or (ID, sub-ID) tuple or ID#subID string into pair of
-        main ID and optional sub-ID.
+        Normalizes input ID or (ID, sub-ID) tuple or ID#subID string into pair
+        of main ID and optional sub-ID. See `normalize_sample_id`.
+        
         Args:
-            ids (float | int | str | unicode or [float|int|str|unicode])
+            ids (float | int | str | unicode or list): input ID or ID+subID
         """
-        if type(ids) is str and '#' in ids:
-            ids = ids.split('#')
-
-        if type(ids) not in [tuple, list]:
-            ids = (ids,)
-
-        ids = [str(U.intfloat2int(x)).strip() for x in ids]
-        ids = [ x for x in ids if x ]  ## filter out empty strings but not '0'
-        
-        self._id = ids[0] if len(ids) > 0 else ''
-        self._subid = ids[1] if len(ids) > 1 else ''
-        
+        self._id, self._subid = normalize_sample_id(ids)
     
     def __repr__(self):
         r = '<%s %s {plate: %r, position: %i}>' % (self.__class__.__name__,

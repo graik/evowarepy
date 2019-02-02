@@ -22,6 +22,7 @@ class ParsingError(Exception):
     pass
 
 def tolist(x):
+    """convert input to list if it is not already a list or tuple"""
     if type(x) in [list,tuple]:
         return x
     return [x]

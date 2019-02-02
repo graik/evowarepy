@@ -14,12 +14,14 @@
 ##   limitations under the License.
 """Base Parser for Excel tables"""
 
-import evoware as E
-from evoware import fileutil as F
-from evoware import PlateFormat, PlateError, Plate
-from . import keywords as K
-
 import xlrd as X  ## third party dependency
+
+import evoware as E
+import evoware.fileutil as F
+import evoware.util as U
+import evoware.excel.keywords as K
+
+from evoware import PlateFormat, PlateError, Plate
 
 class ExcelFormatError(IndexError):
     pass
@@ -154,16 +156,9 @@ class XlsReader(object):
         self.byLabel = byLabel
         self.defaultRackType = defaultRackType
 
-    def intfloat2int(self,x):
-        """convert floats like 1.0, 100.0, etc. to int *where applicable*"""
-        if type(x) is float:
-            if x % 1 == 0:
-                x = int(x)
-        return x
-
     def clean2str(self, x):
         """convert integer floats to int, then strip to unicode"""
-        x = self.intfloat2int(x)
+        x = U.intfloat2int(x)
 
         if type(x) is not str:
             x = str(x)
@@ -187,7 +182,7 @@ class XlsReader(object):
             if v0 and isinstance(v0, str) and v0.lower() == keyword:
                 try:
                     key = str(values[1]).strip()
-                    value = self.intfloat2int(values[2])
+                    value = U.intfloat2int(values[2])
                     return {key: value}
 
                 except Exception as error:
@@ -393,3 +388,6 @@ class Test(testing.AutoTest):
         
         self.assertEqual(E.plates['reservoirA'].rackType, 'Trough 100ml')
         
+if __name__ == '__main__':
+    
+    testing.localTest()
