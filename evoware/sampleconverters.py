@@ -261,7 +261,7 @@ class DistributionConverter(SampleConverter):
             sourcefields (list of str): names of reagent/volume field(s) 
                 to process, default: all reagent IDs
         """
-        super(DistributionConverter,self).__init__(plateindex)
+        super().__init__(plateindex)
     
         self.reagents = SampleList(reagents)
         self.reagents = self.reagents.toSampleIndex()
@@ -275,7 +275,7 @@ class DistributionConverter(SampleConverter):
             if not isinstance(srcsample, Sample):
                 return False
         
-        return super(DistributionConverter, self).isvalid(sample)
+        return super().isvalid(sample)
 
 
     def tosample(self, d):
@@ -291,7 +291,7 @@ class DistributionConverter(SampleConverter):
         
         d['sourcevolumes'] = sourcevolumes
         
-        return super(DistributionConverter, self).tosample(d)
+        return super().tosample(d)
 
 
 
