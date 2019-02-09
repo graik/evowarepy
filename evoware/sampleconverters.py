@@ -9,7 +9,7 @@ import evoware as E
 import evoware.util as U
 import evoware.worklist as W
 
-from evoware.samples import Sample, SampleError, SampleList
+from evoware.samples import Sample, SampleError, SampleList, SampleIndex
 from evoware.targetsample import TargetSample
 from evoware.excel import keywords as K
 from evoware.plate import Plate, PlateError
@@ -83,8 +83,7 @@ class SampleConverter(object):
         Returns:
             bool: True, if entry is a valid Sample instance
         """
-        assert isinstance(sample, self.sampleClass)
-        return True
+        return isinstance(sample, self.sampleClass)
 
     def validate(self, sample):
         """
@@ -175,7 +174,8 @@ class PickingConverter(SampleConverter):
     sampleClass = TargetSample
     
     def __init__(self, plateindex=E.plates, sourcesamples=[], 
-                 sourcefields=['source'], defaultvolumes={} ):
+                 sourcefields=['source'], defaultvolumes={},
+                 relaxed_id=False):
         """
         Constructor.
         
@@ -185,11 +185,13 @@ class PickingConverter(SampleConverter):
             sourcefields ([str]): name of field(s) pointing to source sample
             defaultvolumes (dict): map each or some source field(s) to 
                 a default volume. E.g. Should look like {'buffer' : 10}.
+            relaxed_id (bool): relaxed ID mapping allowing to fetch any 
+                myID#subID sample if 'myID' itself cannot be found. 
         """
         
         super(PickingConverter,self).__init__(plateindex)
         
-        self.sampleindex = sourcesamples.toSampleIndex()
+        self.sampleindex = SampleIndex(sourcesamples,relaxed_id=relaxed_id)
         
         self.sourcefields = sourcefields
         self.defaultvolumes = defaultvolumes
@@ -200,13 +202,23 @@ class PickingConverter(SampleConverter):
             if not isinstance(srcsample, Sample):
                 return False
         
-        return super(PickingConverter, self).isvalid(sample)
+        return super().isvalid(sample)
     
     
     def volumefield(self, field):
         return '%s_volume' % field
     
     def tosample(self, d):
+        """
+        Convert a dictionary into a new `TargetSample` instance or validate an 
+        existing `TargetSample` instance.
+        
+        Args:
+            d (dict | `Sample` | `TargetSample`): dict with sample fields or 
+                `Sample` or `TargetSample` instance
+        Returns:
+            `TargetSample`: validated sample instance
+        """
         sourcevolumes = {}
         
         for f in self.sourcefields:
@@ -222,7 +234,7 @@ class PickingConverter(SampleConverter):
         
         d['sourcevolumes'] = sourcevolumes
      
-        r = super(PickingConverter,self).tosample(d)
+        r = super().tosample(d)
         return r
     
 
@@ -249,7 +261,8 @@ class DistributionConverter(SampleConverter):
    
     sampleClass = TargetSample
     
-    def __init__(self, plateindex=E.plates, reagents=[], sourcefields=[] ):
+    def __init__(self, plateindex=E.plates, reagents=[], sourcefields=[],
+                 relaxed_id=False):
         """
         Constructor.
         
@@ -260,10 +273,13 @@ class DistributionConverter(SampleConverter):
                 source fields
             sourcefields (list of str): names of reagent/volume field(s) 
                 to process, default: all reagent IDs
+            relaxed_id (bool): relaxed ID mapping allowing to fetch any 
+                myID#subID sample if 'myID' itself cannot be found. 
         """
         super().__init__(plateindex)
     
-        self.reagents = SampleList(reagents).toSampleIndex()
+        self.reagents = SampleIndex(SampleList(reagents), 
+                                    relaxed_id=relaxed_id)
     
         self.sourcefields = sourcefields or list(self.reagents.keys())
 
@@ -294,7 +310,7 @@ class DistributionConverter(SampleConverter):
 
 
 
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test sampleconverters"""

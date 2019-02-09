@@ -32,7 +32,7 @@ def normalize_sample_id(ids):
         converted first to int 1 and then str '1'.
         
         Args: 
-            ids (float | int | str | unicode or list thereof): input ID[,subID]
+            ids (float | int | str or list thereof): input ID[,subID]
         
         Returns:
             tuple: (str_ID, str_subID) or (str_ID, '') 
@@ -275,7 +275,7 @@ class SampleList(MutableSequence):
         """
         from evoware.sampleconverters import SampleConverter
         
-        super(SampleList, self).__init__()
+        super().__init__()
         
         converter = converter or SampleConverter()
         assert isinstance(converter, SampleConverter)
@@ -300,6 +300,11 @@ class SampleList(MutableSequence):
         self._list[i] = self._converter.tosample( val )
         return self._list[i]
     
+    def insert(self, i, val):
+        assert isinstance(val, Sample) or isinstance(val, dict)
+        val = self._converter.tosample(val)
+        self._list.insert(i, val)
+
     def __eq__(self, o):
         return self._list == o
 
@@ -309,19 +314,10 @@ class SampleList(MutableSequence):
     def __repr__(self):
         return """<SampleList %s>""" % self._list
 
-    def insert(self, i, val):
-        assert isinstance(val, Sample) or isinstance(val, dict)
-        val = self._converter.tosample(val)
-        self._list.insert(i, val)
-
-    def append(self, val):
-        list_idx = len(self._list)
-        self.insert(list_idx, val)
-    
     def toSampleIndex(self, keyfield='fullid'):
         """
-        Create an "index dictionary" with all sample instances indexed by their
-        ID.
+        Create an "index dictionary" with sample instances indexed by their
+        ID. Duplicate entries (with identical ID#subID) will be skipped.
         
         Keyword Args:
             keyfield (str): the sample field or property to use as an index key
@@ -336,6 +332,128 @@ class SampleList(MutableSequence):
                 r[key] = sample
                 
         return r
+
+
+class SampleIndex:
+    """
+    Index mapping `Sample` instances to their full ID (ID#subID). The class
+    behaves similar to a dict but does not implement the full dictionary 
+    interface.
+    """
+    
+    def __init__(self, initialdata=None, relaxed_id=True):
+        """
+        Keyword Args:
+            initialdata (SampleList): initial Sample instances
+            relaxed_id (bool): fall back to matching by only main ID if sub-ID 
+                is not given, for example:
+                parts['Bba001'] may return parts['Bba001#a']
+        """
+        self.relaxed = relaxed_id
+        self._map = {}
+        if initialdata:
+            self.extend(initialdata)
+
+    def add(self, sample:Sample):
+        """
+        Add a new `Sample` instance to the index.
+        
+        Note:
+            If another sample was already registered with the same ID#subID
+            combination, it will be silently overridden. This may lead to 
+            some unexpected side effects if redundant sample lists are read.
+            
+        Args:
+            sample (`Sample`): sample instance to be added
+        """
+        if not isinstance(sample, Sample):
+            raise ValueError('%r not allowed in SampleDict' % type(sample))
+        
+        self._map[ sample.fullid ] = sample
+    
+    def extend(self, samples):
+        """
+        Add several samples to index.
+        
+        Args:
+           samples (Sequence): list of `Sample` instances (or `SampleList`)
+        """
+        for v in samples:
+            self.add(v)
+    
+    def get(self, key, default=None, relaxed=None) -> Sample:
+        """
+        Supports three different calling patterns:
+            index[ 'ID' ] -> (first) sample with main ID=='ID'
+            index[ 'ID#subID' ] -> sample with ID=='ID' and subID=='subID'
+            index[ 'ID', 'subID' ] -> same as above
+        
+        Args:
+            key (str): Sample ID or ID#subID or tuple of (ID, subID)
+            
+        Keyword Args:
+            default (`Sample`): default value to return if key is not found
+            relaxed (bool): override `relaxed_id` setting from constructor
+
+        Returns:
+            `Sample`: `Sample` matching ID or ID#subID
+
+        Raise:
+            KeyError: if given ID doesn't match any sample
+        """
+        
+        key, _subid = normalize_sample_id(key)   
+        if _subid:
+            key = '#'.join((key, _subid))
+        
+        if relaxed is None:
+            relaxed = self.relaxed
+
+        if relaxed and not key in self._map:
+            for k in self._map.keys():
+                if k.split('#')[0] == key:
+                    return self._map[k]
+        
+        try:
+            return self._map[key]
+        except KeyError:
+            if default is not None:
+                return default
+            raise
+    
+    def __getitem__(self, key) -> Sample:
+        return self.get(key)
+    
+    def __len__(self):
+        return len(self._map)
+    
+    def keys(self):
+        return self._map.keys()
+    
+    def values(self):
+        return self._map.values()
+    
+    def items(self):
+        return self._map.items()
+
+    def __delitem__(self, key):
+        """
+        Remove given sample.
+        
+            >>> del index[key]
+        
+        Args:
+            key (str or `Sample`): either sample ID or a `Sample` instance
+        """
+        if type(key) is str:
+            sample = self[key]
+            del self._map[sample.fullid]
+        
+        if isinstance(key, Sample):
+            del self._map[key.fullid]
+
+        raise ValueError('%r not allowed' % type(key))
+
 
 ######################
 ### Module testing ###
@@ -388,6 +506,7 @@ class Test(testing.AutoTest):
     
     def test_samplelist(self):
         import evoware.excel.xlsreader as X
+        import evoware.samples as S
         r = X.XlsReader()
         r.read(self.f_parts)
         
@@ -407,7 +526,7 @@ class Test(testing.AutoTest):
         self.assertEqual(l[7].position2D, 'P1')
         
         # replace list entries from dict or Sample instance
-        l[0] = Sample('testsample0', plate=Plate('testplate',format=PlateFormat(24)),
+        l[0] = S.Sample('testsample0', plate=Plate('testplate',format=PlateFormat(24)),
                       pos=8)
         l[1] = {'ID':'testsample1', 'sub-id':'A', 'plate':'SB11', 'pos':'I1'}
         

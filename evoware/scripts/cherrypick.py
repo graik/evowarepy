@@ -129,6 +129,7 @@ def run(options):
         converter = C.PickingConverter(sourcesamples=srcsamples, 
                                        sourcefields=columns,
                                        defaultvolumes=xls.volumes,
+                                       relaxed_id=True,
                                        )
         
         targets = S.SampleList(xls.rows, converter=converter)
