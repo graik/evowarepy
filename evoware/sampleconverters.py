@@ -263,8 +263,7 @@ class DistributionConverter(SampleConverter):
         """
         super().__init__(plateindex)
     
-        self.reagents = SampleList(reagents)
-        self.reagents = self.reagents.toSampleIndex()
+        self.reagents = SampleList(reagents).toSampleIndex()
     
         self.sourcefields = sourcefields or list(self.reagents.keys())
 
