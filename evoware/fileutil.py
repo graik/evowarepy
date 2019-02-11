@@ -197,7 +197,7 @@ class Test(testing.AutoTest):
         """fileutil.absfilename test"""
         r = absfile( self.fname1 )
         self.assertEqual( r,
-                          osp.join( osp.expanduser('~'), 'subfolder/file.txt'))
+                          osp.join( osp.expanduser('~'), 'subfolder','file.txt'))
         
 
 if __name__ == '__main__':
