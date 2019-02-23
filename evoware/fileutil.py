@@ -21,7 +21,7 @@ import shutil, glob, sys
 
 import logging
 
-from . import util
+from evoware import util
 
 class UtilError( Exception ):
     pass
@@ -178,7 +178,7 @@ def tryRemove(f, verbose=0, tree=0, wildcard=0 ):
 
 ######################
 ### Module testing ###
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test MyModule"""
