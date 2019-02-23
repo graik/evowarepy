@@ -12,9 +12,9 @@
 ##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
+from collections import MutableSequence
 
 import evoware.util as U
-
 import evoware as E
 from evoware import PlateFormat, PlateError, Plate
 
@@ -252,8 +252,6 @@ class Sample(object):
         self._hashcache = hash((self.fullid, self._plate, self._pos))
         return self._hashcache
     
-
-from collections import MutableSequence
 
 class SampleList(MutableSequence):
     """
@@ -593,3 +591,8 @@ class Test(testing.AutoTest):
         
         ## partslist.xls contains 3 duplicate entries with identical ID#subID
         self.assertEquals(len(index), len(primers) + len(srcsamples) -3)
+
+
+if __name__ == '__main__':
+
+    testing.localTest()
