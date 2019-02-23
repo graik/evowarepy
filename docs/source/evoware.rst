@@ -47,6 +47,7 @@ The following classes support the generation of
 Tecan "work lists", that is, custom-formatted textfiles with
 instructions for the robot. 
 
+.. currentmodule:: evoware.tecan
 .. autosummary::
    :nosignatures:
    :toctree: evoware
@@ -93,18 +94,3 @@ Modules with utility and helper methods.
    util
    dialogs
 
-Exceptions
-----------
-
-The following errors are defined by evoware.
-
-.. autosummary::
-   :nosignatures:
-   :toctree: evoware
-   :template: autosummary/class_details.rst
-
-   SampleError
-   SampleValidationError
-   PlateError
-   PlateIndexError
-   WorklistException

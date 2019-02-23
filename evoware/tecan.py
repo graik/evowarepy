@@ -13,7 +13,7 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 
-"""Generate Evoware pipetting worklists"""
+"""Generate Tecan Evoware worklists"""
 
 __all__ = ['Worklist', 'WorklistException','SampleWorklist']  ## result of `import *`
 

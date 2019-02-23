@@ -7,7 +7,6 @@ from numbers import Number
 
 import evoware as E
 import evoware.util as U
-import evoware.worklist as W
 import evoware.plates as P
 
 from evoware.samples import Sample, SampleError, SampleList, SampleIndex, Reaction

@@ -42,7 +42,7 @@ import evoware.util as U
 import evoware.fileutil as F
 import evoware.dialogs as D
 
-import evoware.worklist as W
+import evoware.tecan as T
 import evoware.samples as S
 import evoware.sampleconverters as C
 import evoware.excel as X
@@ -134,7 +134,7 @@ def run(options):
         
         targets = S.SampleList(xls.rows, converter=converter)
         
-        with W.SampleWorklist(options['o'], 
+        with T.SampleWorklist(options['o'], 
                               reportErrors=options['dialogs']) as wl:
             wl.distributeSamples(targets)
     
