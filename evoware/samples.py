@@ -12,7 +12,7 @@
 ##   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
-from collections import MutableSequence
+from collections.abc import MutableSequence
 
 import evoware.util as U
 import evoware as E
@@ -554,43 +554,46 @@ class Test(testing.AutoTest):
         """
         ensure unknown plates are created with default format but correct ID.
         """
+        import evoware.samples as S ## enforce evoware.samples namespace
+        
         reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
                      {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
 
-        l = SampleList(reagents)
+        l = S.SampleList(reagents)
         
         self.assertEqual(l[0].plate.rackLabel, 'R01')
         self.assertEqual(l[1].plate.rackLabel, 'R02')
         self.assertEqual(l[0].plate.format, E.plates.index.defaultformat)
         
         ## test re-creating a sample list
-        l2 = SampleList(l)
+        l2 = S.SampleList(l)
         self.assertEqual(l, l2)
     
     def test_sampleindex(self):
         import evoware.excel.xlsreader as X
+        import evoware.samples as S  ## enforce evoware.samples namespace
         
         xls = X.XlsReader()
         xls.read(self.f_parts)
-        srcsamples = SampleList(xls.rows)
+        srcsamples = S.SampleList(xls.rows)
         
         xls = X.XlsReader()
         xls.read(self.f_primers)
-        primers = SampleList(xls.rows)
+        primers = S.SampleList(xls.rows)
         
-        index = SampleIndex(srcsamples, relaxed_id=True)
+        index = S.SampleIndex(srcsamples, relaxed_id=True)
         index.extend(primers)
         
         self.assertIs(index['sb0101'], index['sb0101#2'])
         self.assertIs(index['sb0104'], index['sb0104#1'])
         self.assertIs(index['sb0106'], index['sb0106','a'])
         
-        self.assertEquals(index['sb0103'].fullid, 'sb0103')
-        self.assertEquals(index['sb0104','4'].fullid,'sb0104#4')
+        self.assertEqual(index['sb0103'].fullid, 'sb0103')
+        self.assertEqual(index['sb0104','4'].fullid,'sb0104#4')
         self.assertEqual(index['sbo0002'].position, 2)
         
         ## partslist.xls contains 3 duplicate entries with identical ID#subID
-        self.assertEquals(len(index), len(primers) + len(srcsamples) -3)
+        self.assertEqual(len(index), len(primers) + len(srcsamples) -3)
 
 
 if __name__ == '__main__':
