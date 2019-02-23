@@ -156,18 +156,20 @@ class Test(testing.AutoTest):
     TAGS = [ testing.SCRIPT ]
 
     def prepare(self):
-        """Called once"""
+        """Called before every single test"""
         import tempfile    
         import evoware
         self.f_project = tempfile.mkdtemp(prefix='evoware_cherrypick_')
         evoware.plates.clear()
 
+
     def cleanUp(self):
-        """Called after all tests are done, except DEBUG==True"""
+        """Called after every individual test, except DEBUG==True"""
         import evoware.fileutil as F
         F.tryRemove(self.f_project, verbose=(self.VERBOSITY>1), tree=1)
 
-    def generictest(self, options):
+
+    def generictest(self, options, expected='results/cherrypick_simple.gwl'):
         import evoware.fileutil as F
         import os.path as O
                 
@@ -177,8 +179,7 @@ class Test(testing.AutoTest):
         
         self.assertTrue(O.exists(self.f_out))
         
-        with open(self.f_out,'r') as f1, \
-             open(F.testRoot('results/cherrypick_simple.gwl'),'r') as f2:
+        with open(self.f_out,'r') as f1, open(F.testRoot(expected),'r') as f2:
             
             self.assertEqual(f1.readlines(), f2.readlines())
         
@@ -190,11 +191,12 @@ class Test(testing.AutoTest):
         options = {'i': F.testRoot('targetlist_PCR.xls'), 
                    'src': [F.testRoot('primers.xls'), 
                            F.testRoot('partslist_simple.xls')],
-                   'o': 'cherrypicking.gwl',
+                   'o': 'cherrypicking_simple.gwl',
                    'p': self.f_project,
                    'columns' : ['primer1', 'primer2', 'template']
                    }
         self.generictest(options)
+        
 
     def test_cherrypick_flexibleIDs(self):
         """cherrypick.py; cherrypicking with flexible sub-ID handling"""
@@ -203,11 +205,11 @@ class Test(testing.AutoTest):
         options = {'i': F.testRoot('targetlist_PCR.xls'), 
                    'src': [F.testRoot('primers.xls'), 
                            F.testRoot('partslist.xls')],
-                   'o': 'cherrypicking.gwl',
+                   'o': 'cherrypicking_flexible.gwl',
                    'p': self.f_project,
                    'columns' : ['primer1', 'primer2', 'template']
                    }
-        self.generictest(options)
+        self.generictest(options, 'results/cherrypick_flexible.gwl')
       
 if __name__ == '__main__':
     
@@ -220,4 +222,4 @@ if __name__ == '__main__':
         testing.localTest(debug=('debug' in options))
         sys.exit(0)
     
-    run(options.update({'debug':True}))
+    run(options)
