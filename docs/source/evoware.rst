@@ -10,7 +10,6 @@ The relevant classes are defined in **evoware.plates**. A singleton (static)
 Plate instances.
 
 .. currentmodule:: evoware.plates
-
 .. autosummary::
    :nosignatures:
    :toctree: evoware
@@ -29,7 +28,6 @@ kind of sample that tracks how much volume it is supposed to receive from other
 **evoware.samples** module.
 
 .. currentmodule:: evoware.samples
-
 .. autosummary::
    :nosignatures:
    :toctree: evoware
