@@ -26,15 +26,6 @@ project_root = osp.abspath( osp.split( osp.abspath(__file__) )[0] )
 
 sys.path.append( osp.join( project_root, 'thirdparty'))
 
-## Import main classes into package name space for convenience
-from evoware.evotask import EvoTask
-from evoware.worklist import Worklist, WorklistException
-
-from evoware.samples import Sample, SampleList, SampleError
-from evoware.targetsample import TargetSample
-from evoware.sampleconverters import SampleConverter, DistributionConverter, \
-                                     PickingConverter, SampleValidationError
-from evoware.sampleworklist import SampleWorklist
 
 ## documentation hints:
 ## * napoleon sphinx extension for readable docstrings: 
