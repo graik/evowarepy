@@ -1,12 +1,33 @@
 API Documentation
 =================
 
-Sample handling
----------------
+Sample & Plate handling
+-----------------------
 
-Classes for handling and identifying samples and plates or labware.
+Plates define labware instances such as tube racks or microwell plates.  
+The relevant classes are defined in `evoware.plates`. A singleton (static)
+`index` variable holds a package-wide registry of currently known 
+plate instances.
 
-.. currentmodule:: evoware
+.. currentmodule:: evoware.plates
+
+.. autosummary::
+   :nosignatures:
+   :toctree: evoware
+   :template: autosummary/class_details.rst
+
+   PlateFormat
+   Plate
+   PlateIndex
+   index
+
+
+Samples define single wells or tubes within plates. A `Reaction` is a special
+kind of sample that tracks how much volume it is supposed to receive from other
+(source) `Sample`s. The relevant classes are found in the `evoware.samples`
+module.
+
+.. currentmodule:: evoware.samples
 
 .. autosummary::
    :nosignatures:
@@ -14,15 +35,12 @@ Classes for handling and identifying samples and plates or labware.
    :template: autosummary/class_details.rst
    
    Sample
-   TargetSample
+   Reaction
    SampleList
-   PlateFormat
-   Plate
-   PlateIndex
-   plates
+   SampleIndex
 
 
-Evoware Worklists
+Tecan Worklists
 ------------------
 
 The following classes support the generation of 

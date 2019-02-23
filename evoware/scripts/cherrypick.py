@@ -42,7 +42,7 @@ import evoware.util as U
 import evoware.fileutil as F
 import evoware.dialogs as D
 
-import evoware.sampleworklist as W
+import evoware.worklist as W
 import evoware.samples as S
 import evoware.sampleconverters as C
 import evoware.excel as X
