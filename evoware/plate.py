@@ -341,7 +341,7 @@ class Plate(object):
 
 ######################
 ### Module testing ###
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test PlateFormat"""
