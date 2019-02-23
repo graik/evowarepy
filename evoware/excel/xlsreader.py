@@ -149,8 +149,8 @@ class XlsReader(object):
             defaultRackType (str): labware type assigned to new plates,
                 if byLabel=False, see also Plate.__init__
         """
-        self.params = {}
-        self.rows = []
+        self.params = {} #: list of parameter records parsed from header
+        self.rows = [] #: list of dict, one for each line from main body of the table 
         
         self.plateindex = plateIndex
         self.byLabel = byLabel

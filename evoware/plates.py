@@ -20,6 +20,10 @@ import re, string
 class PlateError(Exception):
     pass
 
+class PlateIndexError(PlateError):
+    pass
+
+
 class PlateFormat(object):
     """
     Describe plate columns : rows dimensions and convert back and for between 
@@ -338,9 +342,6 @@ class Plate(object):
             return self.rackLabel
         return self.barcode
 
-
-class PlateIndexError(PlateError):
-    pass
 
 class PlateIndex(dict):
     """

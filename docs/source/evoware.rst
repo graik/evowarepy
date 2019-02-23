@@ -5,9 +5,9 @@ Sample & Plate handling
 -----------------------
 
 Plates define labware instances such as tube racks or microwell plates.  
-The relevant classes are defined in `evoware.plates`. A singleton (static)
+The relevant classes are defined in **evoware.plates**. A singleton (static)
 `index` variable holds a package-wide registry of currently known 
-plate instances.
+Plate instances.
 
 .. currentmodule:: evoware.plates
 
@@ -20,12 +20,13 @@ plate instances.
    Plate
    PlateIndex
    index
+   PlateIndexError
 
 
 Samples define single wells or tubes within plates. A `Reaction` is a special
 kind of sample that tracks how much volume it is supposed to receive from other
-(source) `Sample`s. The relevant classes are found in the `evoware.samples`
-module.
+(source) `Sample` instances. The relevant classes are found in the
+**evoware.samples** module.
 
 .. currentmodule:: evoware.samples
 
@@ -68,7 +69,10 @@ The core Excel parsing is found in the evoware.excel sub-package:
    evoware.excel
 
 Excel files are parsed into dictionaries that are then converted into Sample
-information using different converter classes:
+information using different converter classes which are defined in the 
+**sampleconverters** module:
+
+.. currentmodule:: evoware.sampleconverters
 
 .. autosummary::
    :nosignatures:
@@ -78,6 +82,8 @@ information using different converter classes:
    SampleConverter
    PickingConverter
    DistributionConverter
+   SampleValidationError
+
 
 Helper Modules
 --------------

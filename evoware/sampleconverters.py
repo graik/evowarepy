@@ -39,7 +39,7 @@ class SampleConverter(object):
         
         Args: 
             plateindex (`PlateIndex`): mapping plate IDs to Plate instances. 
-               This defaults to the central `plates` index in the evoware 
+               This defaults to the central `plates.index` in the evoware 
                name space
         """
         self.plateindex = plateindex

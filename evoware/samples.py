@@ -497,7 +497,7 @@ class SampleIndex:
             
         Keyword Args:
             default (`Sample`): default value to return if key is not found
-            relaxed (bool): override `relaxed_id` setting from constructor
+            relaxed (bool): override *relaxed_id* setting from constructor
 
         Returns:
             `Sample`: `Sample` matching ID or ID#subID
