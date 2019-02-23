@@ -21,7 +21,7 @@ import evoware.fileutil as F
 import evoware.util as U
 import evoware.excel.keywords as K
 
-from evoware import PlateFormat, PlateError, Plate
+from evoware.plates import PlateFormat, PlateError, Plate
 
 class ExcelFormatError(IndexError):
     pass
@@ -77,7 +77,7 @@ class XlsReader(object):
     type, needed if using barcodes).
 
     The default PlateIndex is a package-wide singleton instance
-    'evoware.plates'. 
+    'evoware.plates.index'. 
     
     The 'format' keyword in the first column anywhere before the actual
     header row signals a special plate format parameter which leads to 
@@ -93,9 +93,9 @@ class XlsReader(object):
         
     The above example results in:
     
-    >>> evoware.plates['assay0123']
+    >>> evoware.plates.index['assay0123']
         <Plate assay0123 : (384 wells)>
-    >>> evoware.plates['dest01']
+    >>> evoware.plates.index['dest01']
         <Plate dest01 : (384 wells)>
     
     Note that 'assay0123' has been interpreted as 'rackLabel', which is the 
@@ -137,7 +137,7 @@ class XlsReader(object):
 
     _header0 = HEADER_FIRST_VALUE.lower()
 
-    def __init__(self, plateIndex=E.plates, byLabel=True,
+    def __init__(self, plateIndex=E.plates.index, byLabel=True,
                  defaultRackType='%i Well Microplate'):
         """
         Constructor.
@@ -379,14 +379,14 @@ class Test(testing.AutoTest):
         self.r2 = XlsReader(byLabel=False)
         self.r2.read(self.f_parts)
         
-        self.assertEqual(E.plates['SB11'].rackType, '384 Well Microplate')
-        self.assertEqual(E.plates['SB11'].barcode, 'SB11')
+        self.assertEqual(E.plates.index['SB11'].rackType, '384 Well Microplate')
+        self.assertEqual(E.plates.index['SB11'].barcode, 'SB11')
 
     def test_customFormat(self):
         self.r3 = XlsReader()
         self.r3.read(self.f_distribute)
         
-        self.assertEqual(E.plates['reservoirA'].rackType, 'Trough 100ml')
+        self.assertEqual(E.plates.index['reservoirA'].rackType, 'Trough 100ml')
         
 if __name__ == '__main__':
     

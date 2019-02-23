@@ -16,7 +16,7 @@ from collections import MutableSequence
 
 import evoware.util as U
 import evoware as E
-from evoware import PlateFormat, PlateError, Plate
+from evoware.plates import PlateFormat, PlateError, Plate
 
 class SampleError(Exception):
     pass
@@ -113,7 +113,7 @@ class Sample(object):
         ID + subID + plate + position determine the identity of a sample:
         
         >>> s1 = Sample('s1', 'a', 'plateA', 1)
-        >>> s2 = Sample('s1#a', plate=evoware.plates['plateA'], pos='A1')
+        >>> s2 = Sample('s1#a', plate=evoware.plates.index['plateA'], pos='A1')
         >>> s1 == s2
         True
         >>> s1 is s2
@@ -132,8 +132,8 @@ class Sample(object):
             subid (str | float | int): sub-ID, e.g. to distinguish samples 
                    with equal content
             plate (`Plate` | str): Plate instance, or plate ID for looking up
-                   plate from evoware.plates. If no plate is given, the
-                   default plate instance from ``evoware.plates`` will be
+                   plate from evoware.plates.index. If no plate is given, the
+                   default plate instance from ``evoware.plates.index`` will be
                    assigned.
         """        
         self._subid = str(U.intfloat2int(subid)).strip()
@@ -145,9 +145,9 @@ class Sample(object):
             self._setid(id)   # supports ID or ID#subID
 
         if isinstance(plate, str):
-            plate = E.plates.getcreate(plate)
+            plate = E.plates.index.getcreate(plate)
         
-        self._plate = plate or E.plates.defaultplate
+        self._plate = plate or E.plates.index.defaultplate
         assert isinstance(self._plate, Plate)
         
         self._pos = self.plateformat.pos2int(pos)
@@ -261,7 +261,7 @@ class SampleList(MutableSequence):
     Sample instances using the ``converter`` (default: `SampleConverter`).
     During conversion, plate IDs are converted into references to Plate
     instances which are looked up from the given `PlateIndex` 
-    (default: the static instance evoware.plates).
+    (default: the static instance evoware.plates.index).
     """
 
     def __init__(self, data=None, converter=None):
@@ -468,7 +468,7 @@ class Test(testing.AutoTest):
         self.f_parts = F.testRoot('partslist.xls')
         self.f_primers = F.testRoot('primers.xls')
         
-        E.plates.clear()
+        E.plates.index.clear()
 
     def test_sample(self):
         s = Sample(id='BBa1000', subid=1.0, plate=Plate('plateA'), pos='A1')
@@ -495,7 +495,7 @@ class Test(testing.AutoTest):
     
     def test_sample_hashing(self):
         s1 = Sample('s1', 'a', 'plateA', 1)
-        s2 = Sample('s1#a', plate=E.plates['plateA'], pos='A1')
+        s2 = Sample('s1#a', plate=E.plates.index['plateA'], pos='A1')
 
         self.assertTrue(s1 == s2)
         self.assertTrue(s1 is not s2)
@@ -561,7 +561,7 @@ class Test(testing.AutoTest):
         
         self.assertEqual(l[0].plate.rackLabel, 'R01')
         self.assertEqual(l[1].plate.rackLabel, 'R02')
-        self.assertEqual(l[0].plate.format, E.plates.defaultformat)
+        self.assertEqual(l[0].plate.format, E.plates.index.defaultformat)
         
         ## test re-creating a sample list
         l2 = SampleList(l)

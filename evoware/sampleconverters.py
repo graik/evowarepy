@@ -8,11 +8,11 @@ from numbers import Number
 import evoware as E
 import evoware.util as U
 import evoware.worklist as W
+import evoware.plates as P
 
 from evoware.samples import Sample, SampleError, SampleList, SampleIndex
 from evoware.targetsample import TargetSample
 from evoware.excel import keywords as K
-from evoware.plate import Plate, PlateError
 
 class SampleValidationError(Exception):
     pass
@@ -35,7 +35,7 @@ class SampleConverter(object):
     #: fields to subject to clean2str method (convert e.g. 1.0 to unicode '1')
     fields2strclean = ['id', 'subid']
     
-    def __init__(self, plateindex=E.plates):
+    def __init__(self, plateindex=P.index):
         """
         Constructor.
         
@@ -124,7 +124,7 @@ class SampleConverter(object):
     
         d = self.cleanDict(d)
         
-        if not isinstance(d['plate'], Plate):
+        if not isinstance(d['plate'], P.Plate):
             d['plate'] = self.getcreatePlate(d['plate'])
         
         r = self.sampleClass(**d)
@@ -173,7 +173,7 @@ class PickingConverter(SampleConverter):
     
     sampleClass = TargetSample
     
-    def __init__(self, plateindex=E.plates, sourcesamples=[], 
+    def __init__(self, plateindex=P.index, sourcesamples=[], 
                  sourcefields=['source'], defaultvolumes={},
                  relaxed_id=False):
         """
@@ -261,14 +261,14 @@ class DistributionConverter(SampleConverter):
    
     sampleClass = TargetSample
     
-    def __init__(self, plateindex=E.plates, reagents=[], sourcefields=[],
+    def __init__(self, plateindex=P.index, reagents=[], sourcefields=[],
                  relaxed_id=False):
         """
         Constructor.
         
         Args:
             plateindex (`PlateIndex`): index of all known plates 
-                (default is evoware.plates)
+                (default is evoware.plates.index)
             reagents (`SampleList` or list of dict): sample IDs *must* match 
                 source fields
             sourcefields (list of str): names of reagent/volume field(s) 
@@ -319,25 +319,22 @@ class Test(testing.AutoTest):
 
     def prepare( self ):
         """reset package plate index between tests"""
-        import evoware as E
-        E.plates.clear()
+        P.index.clear()
             
     def test_sampleconverter(self):
-        plate = E.plates.getcreate('plateA', Plate('plateA'))
+        plate = P.index.getcreate('plateA', P.Plate('plateA'))
         
         d1 = dict(id='BBa1000', subid=1.0, plate=plate, pos='A1')
         s1 = SampleConverter().tosample(d1)
         
-        s2 = Sample(id='BBa1000#1', plate=E.plates['plateA'], pos=1)
+        s2 = Sample(id='BBa1000#1', plate=P.index['plateA'], pos=1)
         self.assertEqual(s1, s2)
 
     
-    def test_pickingconverter(self):
-        import evoware as E
+    def test_pickingconverter(self):        
+        P.index['target'] = P.Plate('target')
         
-        E.plates['target'] = E.Plate('target')
-        
-        sourceplate = E.Plate('SRC')
+        sourceplate = P.Plate('SRC')
     
         src_sample1 = Sample('R01', plate=sourceplate, pos=1)
         src_sample2 = Sample('R02#b', plate=sourceplate, pos=2)
@@ -361,8 +358,6 @@ class Test(testing.AutoTest):
         
         
     def test_distributionConverter(self):
-        import evoware as E
-
         reagents = [ {'ID':'reagent1', 'plate': 'R01', 'pos': 1},
                      {'ID':'reagent2', 'plate': 'R02', 'pos': 'A1'} ]
 
@@ -370,7 +365,7 @@ class Test(testing.AutoTest):
     
         c = DistributionConverter(reagents=reagents, sourcefields=fields)
         
-        self.assertEqual(len(E.plates), 2)  # should have inserted the two reagent plates by now
+        self.assertEqual(len(P.index), 2)  # should have inserted the two reagent plates by now
 
         tsample = c.tosample({'ID':'1a', 'plate':'T01', 'pos':10,
                               'reagent1': 20, 'reagent2': 100})

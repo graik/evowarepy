@@ -19,7 +19,7 @@ import copy, collections
 
 from . import fileutil as F
 from . import worklist as W
-from . import plate as P
+from . import plates as P
 
 import xlrd as X  ## third party dependency
 

@@ -88,7 +88,7 @@ class Test(testing.AutoTest):
         import evoware as E
         import tempfile
 
-        E.plates.clear()
+        E.plates.index.clear()
         self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix='test_distributewl_')
 
     def cleanUp( self ):
@@ -100,6 +100,7 @@ class Test(testing.AutoTest):
     def test_distributeworklist(self):
         from .sampleconverters import DistributionConverter
         import evoware as E
+        from evoware import plates
         
         freference = ['A;R01;;;1;;20;;;\n', 'D;T01;;;10;;20;;;\n', 'W;\n', 
                       'A;R01;;;1;;40;;;\n', 'D;T01;;;11;;40;;;\n', 'W;\n', 
@@ -117,9 +118,9 @@ class Test(testing.AutoTest):
                     {'ID':'2#a', 'plate':'T01', 'pos':11, 
                      'reagent1': 40, 'reagent2': 0} ]
 
-        E.plates['T01'] = E.Plate('T01', format=E.PlateFormat(384))
+        plates.index['T01'] = plates.Plate('T01', format=plates.PlateFormat(384))
 
-        converter = DistributionConverter(E.plates, reagents=reagents)
+        converter = DistributionConverter(plates.index, reagents=reagents)
 
         tsamples = S.SampleList(samples, converter=converter)
 

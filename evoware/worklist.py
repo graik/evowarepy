@@ -19,7 +19,7 @@ __all__ = ['Worklist', 'WorklistException']  ## result of `import *`
 
 from . import fileutil as F
 from . import dialogs as D
-from . import plate as P
+from . import plates as P
 
 class WorklistException( Exception ):
     pass

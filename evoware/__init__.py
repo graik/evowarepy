@@ -29,9 +29,6 @@ sys.path.append( osp.join( project_root, 'thirdparty'))
 ## Import main classes into package name space for convenience
 from evoware.evotask import EvoTask
 from evoware.worklist import Worklist, WorklistException
-from evoware.plate import PlateFormat, PlateError, Plate
-from evoware.plateindex import PlateIndex, PlateIndexError
-plates = PlateIndex() #: static `PlateIndex` instance tracking all currently known plates
 
 from evoware.samples import Sample, SampleList, SampleError
 from evoware.targetsample import TargetSample

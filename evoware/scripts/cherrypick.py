@@ -160,7 +160,7 @@ class Test(testing.AutoTest):
         import tempfile    
         import evoware
         self.f_project = tempfile.mkdtemp(prefix='evoware_cherrypick_')
-        evoware.plates.clear()
+        evoware.plates.index.clear()
 
 
     def cleanUp(self):

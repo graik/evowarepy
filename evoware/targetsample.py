@@ -35,7 +35,7 @@ class TargetSample(S.Sample):
     
     **Usage:**
     
-    >>> targetplate = evoware.plates['PCR-A']  # get a Plate instance
+    >>> targetplate = evoware.plates.index['PCR-A']  # get a Plate instance
     >>>
     >>> src1 = Sample('reagent1', plate='source1', pos='A1')
     >>> src2 = Sample('reagent2', plate='source1', pos='B1')
@@ -67,8 +67,8 @@ class TargetSample(S.Sample):
             subid (str | float | int): sub-ID, e.g. to distinguish samples 
                    with equal content
             plate (`Plate` | str): Plate instance, or plate ID for looking up
-                   plate from evoware.plates. If no plate is given, the
-                   default plate instance from evoware.`plates` will be
+                   plate from evoware.plates.index. If no plate is given, the
+                   default plate instance from evoware.`plates.index` will be
                    assigned.
             sourcevolumes (dict): dict mapping source `Sample` 
                    instances to volume
@@ -133,10 +133,10 @@ class Test(testing.AutoTest):
     def prepare( self ):
         """reset package plate index between tests"""
         import evoware as E
-        E.plates.clear()
+        E.plates.index.clear()
 
     def test_targetsample(self):
-        from evoware import Plate
+        from evoware.plates import Plate
 
         sourceplate = Plate('SRC')
         targetplate = Plate('testplate')

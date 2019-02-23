@@ -110,7 +110,7 @@ class Test(testing.AutoTest):
         import evoware.fileutil as F
         import tempfile
         import evoware as E
-        E.plates.clear()
+        E.plates.index.clear()
         
         self.f_worklist = tempfile.mktemp(suffix=".gwl", prefix='test_distributewl_')
         self.f_xls = F.testRoot('distribution.xls')
