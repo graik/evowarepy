@@ -468,6 +468,7 @@ class Test(testing.AutoTest):
         """Called once"""
         import evoware.fileutil as F
         self.f_parts = F.testRoot('partslist.xls')
+        self.f_primers = F.testRoot('primers.xls')
         
         E.plates.clear()
 
@@ -567,4 +568,28 @@ class Test(testing.AutoTest):
         ## test re-creating a sample list
         l2 = SampleList(l)
         self.assertEqual(l, l2)
-            
+    
+    def test_sampleindex(self):
+        import evoware.excel.xlsreader as X
+        
+        xls = X.XlsReader()
+        xls.read(self.f_parts)
+        srcsamples = SampleList(xls.rows)
+        
+        xls = X.XlsReader()
+        xls.read(self.f_primers)
+        primers = SampleList(xls.rows)
+        
+        index = SampleIndex(srcsamples, relaxed_id=True)
+        index.extend(primers)
+        
+        self.assertIs(index['sb0101'], index['sb0101#2'])
+        self.assertIs(index['sb0104'], index['sb0104#1'])
+        self.assertIs(index['sb0106'], index['sb0106','a'])
+        
+        self.assertEquals(index['sb0103'].fullid, 'sb0103')
+        self.assertEquals(index['sb0104','4'].fullid,'sb0104#4')
+        self.assertEqual(index['sbo0002'].position, 2)
+        
+        ## partslist.xls contains 3 duplicate entries with identical ID#subID
+        self.assertEquals(len(index), len(primers) + len(srcsamples) -3)
