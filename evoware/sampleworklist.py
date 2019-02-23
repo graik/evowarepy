@@ -2,12 +2,11 @@
 ##   Copyright 2014 - 2019 Raik Gruenberg
 from . import samples as S
 from . import worklist as W
-from . import targetsample as TS
 
 class SampleWorklist(W.Worklist):
     """
     High-level worklist operating on `Sample` and
-    `TargetSample` instances.
+    `Reaction` instances.
     """
     
     def transferSample(self, src, dst, volume, wash=True ):
@@ -34,7 +33,7 @@ class SampleWorklist(W.Worklist):
         keys = []
         
         for ts in targetsamples:
-            assert isinstance(ts, TS.TargetSample)
+            assert isinstance(ts, S.Reaction)
             for k in ts.sourceIds():
                 if not k in keys:
                     keys.append(k)
@@ -54,7 +53,7 @@ class SampleWorklist(W.Worklist):
             support limited wash only after each column/reagent has been processed
         
         Args:
-            targetsamples (list of `TargetSample`), destination positions with 
+            targetsamples (list of `Reaction`), destination positions with 
                 reference to source samples and source volumes
             reagentkeys (tuple of str): source sample IDs (column headers) to
                 process; defaults to all
@@ -65,7 +64,7 @@ class SampleWorklist(W.Worklist):
         ## operate column-wise for optimal tip/plate handling
         for k in keys:
             for tsample in targetsamples:
-                assert isinstance(tsample, TS.TargetSample)
+                assert isinstance(tsample, S.Reaction)
                 
                 srcsample, vol = tsample.sourceIndex().get(k, (None, None))
                 

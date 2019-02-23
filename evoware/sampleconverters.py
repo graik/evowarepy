@@ -10,8 +10,7 @@ import evoware.util as U
 import evoware.worklist as W
 import evoware.plates as P
 
-from evoware.samples import Sample, SampleError, SampleList, SampleIndex
-from evoware.targetsample import TargetSample
+from evoware.samples import Sample, SampleError, SampleList, SampleIndex, Reaction
 from evoware.excel import keywords as K
 
 class SampleValidationError(Exception):
@@ -154,7 +153,7 @@ class SampleConverter(object):
 
 class PickingConverter(SampleConverter):
     """
-    Convert dictionaries or Sample instances to TargetSample instances.
+    Convert dictionaries or Sample instances to Reaction instances.
 
     This converter assumes a "pick list" input where each "row" contains:
        - one or more source columns (sourcefields) pointing to a source 
@@ -171,7 +170,7 @@ class PickingConverter(SampleConverter):
     for this source field, a volume of 0 is assigned.
     """
     
-    sampleClass = TargetSample
+    sampleClass = Reaction
     
     def __init__(self, plateindex=P.index, sourcesamples=[], 
                  sourcefields=['source'], defaultvolumes={},
@@ -210,14 +209,14 @@ class PickingConverter(SampleConverter):
     
     def tosample(self, d):
         """
-        Convert a dictionary into a new `TargetSample` instance or validate an 
-        existing `TargetSample` instance.
+        Convert a dictionary into a new `Reaction` instance or validate an 
+        existing `Reaction` instance.
         
         Args:
-            d (dict | `Sample` | `TargetSample`): dict with sample fields or 
-                `Sample` or `TargetSample` instance
+            d (dict | `Sample` | `Reaction`): dict with sample fields or 
+                `Sample` or `Reaction` instance
         Returns:
-            `TargetSample`: validated sample instance
+            `Reaction`: validated sample instance
         """
         sourcevolumes = {}
         
@@ -240,7 +239,7 @@ class PickingConverter(SampleConverter):
 
 class DistributionConverter(SampleConverter):
     """
-    Convert dictionaries or Sample instances to TargetSample instances.
+    Convert dictionaries or Sample instances to Reaction instances.
     
     This converter assumes a "volume distribution" input format where volumes
     to distribute are variable and listed in columns with the reagent name
@@ -259,7 +258,7 @@ class DistributionConverter(SampleConverter):
                               'reagent1': 20, 'reagent2': 100})
     """
    
-    sampleClass = TargetSample
+    sampleClass = Reaction
     
     def __init__(self, plateindex=P.index, reagents=[], sourcefields=[],
                  relaxed_id=False):

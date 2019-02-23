@@ -13,9 +13,10 @@
 ##   See the License for the specific language governing permissions and
 ##   limitations under the License.
 from collections.abc import MutableSequence
+import numbers
 
-import evoware.util as U
 import evoware as E
+import evoware.util as U
 from evoware.plates import PlateFormat, PlateError, Plate
 
 class SampleError(Exception):
@@ -251,7 +252,112 @@ class Sample(object):
             return self._hashcache
         self._hashcache = hash((self.fullid, self._plate, self._pos))
         return self._hashcache
+
     
+class Reaction(Sample):
+    """
+    Track the reagent transfer from one or more source samples to a single
+    target sample.
+    
+    Reaction thus consolidates information such as 
+    "take 10 ul from plate 1, well A1 and take 5 ul from plate 2, well B1 and
+    combine both into target well plate 3, A1"
+    
+    Reaction introduces one additional field to Sample:
+    
+    * sourcevolumes -- maps source Samples to volume that should be picked
+    
+    Various source samples and volumes can therefore be mapped to a single
+    target sample.
+    
+    **Usage:**
+    
+    >>> targetplate = evoware.plates.index['PCR-A']  # get a Plate instance
+    >>>
+    >>> src1 = Sample('reagent1', plate='source1', pos='A1')
+    >>> src2 = Sample('reagent2', plate='source1', pos='B1')
+    >>> pick_dict = { src1: 15, src2: 100}
+    >>>
+    >>> reaction = Reaction(id='Bba0000#a', plate=targetplate, pos='B2',
+                               sourcevolumes=pick_dict)
+    
+    The ``sourcevolumes`` property will then look like this:
+    
+    >>> reaction.sourcevolumes.keys() == [src1, src2]
+    >>> reaction.sourcevolumes.values() == [15.0, 100.0]
+    
+    
+    There are several convenience methods to access the source sample
+    information:
+    
+    >>> reaction.sourceItems() == [(src1, 15.0), (src2, 100.0)]
+    >>> reaction.sourceIds() == ('reagent1', 'reagent2')
+    >>>
+    >>> reaction.sourceIndex() == {'reagent1' : (src1, 15.0),
+                                  'reagent2' : (src2, 100.0)}
+    """
+    
+    def __init__(self, **kwargs):
+        """
+        Keyword Args:
+            id (str | float | int | tuple): sample ID or tuple of (id, subid)
+            subid (str | float | int): sub-ID, e.g. to distinguish samples 
+                   with equal content
+            plate (`Plate` | str): Plate instance, or plate ID for looking up
+                   plate from evoware.plates.index. If no plate is given, the
+                   default plate instance from evoware.`plates.index` will be
+                   assigned.
+            sourcevolumes (dict): dict mapping source `Sample` 
+                   instances to volume
+        """
+        self.sourcevolumes = {}
+        self._sindex = None
+        super().__init__(**kwargs)
+        
+    def updateFields(self, sourcevolumes={}, **kwargs):
+        """
+        Keyword Args:
+            sourcevolumes (dict): dict mapping source `Sample` 
+                   instances to volume
+        """
+        assert isinstance(sourcevolumes, dict)
+        
+        if len(sourcevolumes) > 0:
+            assert isinstance(list(sourcevolumes.keys())[0], Sample)
+            assert isinstance(list(sourcevolumes.values())[0], numbers.Number )
+            
+        self.sourcevolumes = sourcevolumes
+        
+        super().updateFields(**kwargs)
+    
+    def sourceItems(self):
+        """
+        Pair each source sample with associated source volume.
+        ``sample.sourceItems() == sample.sourcevolumes.items()``
+        
+        Returns:
+           list of dict: [ (`Sample`, float_volume) ]
+        """
+        return self.sourcevolumes.items()
+    
+    def sourceIds(self):
+        """
+        Returns:
+            list of str: the fullID of each source sample, aka the reagent key
+            or column header in a reagent distribution
+        """
+        return [s.fullid for s in self.sourcevolumes.keys()]
+
+    def sourceIndex(self):
+        """
+        Returns:
+            dict: { str : (`Sample`, int_volume) } 
+            a dict of (`Sample`,volume) tuples indexed by reagent ID
+        """
+        if not self._sindex:
+            self._sindex = { ts.fullid : (ts, v) for ts,v in self.sourceItems() }
+        return self._sindex    
+
 
 class SampleList(MutableSequence):
     """
@@ -503,6 +609,24 @@ class Test(testing.AutoTest):
         d = {s1 : 'some value'}
         self.assertTrue(d[s2] == 'some value')
     
+    def test_reaction(self):
+        sourceplate = Plate('SRC')
+        targetplate = Plate('testplate')
+
+        src_sample1 = Sample('R01', plate=sourceplate, pos=1)
+        src_sample2 = Sample('R02#b', plate=sourceplate, pos=2)
+
+        src_volumes = {src_sample1: 15, src_sample2: 100}
+
+        tsample = Reaction(id='Bba0000#a', plate=targetplate, pos='B2',
+                               sourcevolumes=src_volumes)
+
+        sources2 = tsample.sourceItems()
+        sources1 = [ (src_sample1, 15.0), (src_sample2, 100.0) ]
+
+        self.assertCountEqual(sources1, sources2)
+
+
     def test_samplelist(self):
         import evoware.excel.xlsreader as X
         import evoware.samples as S
