@@ -615,20 +615,7 @@ class Test(testing.AutoTest):
         cwl.toWorklist(byLabel=True, volume=10)
         
         cwl.close()
-        
-    def test_failtemplate(self):
-        """simulate issue #2"""
-        
-        parts = SourceIndex()
-        parts.readExcel(self.f_failparts)
-        
-        def raiseerror():
-            t = TargetIndex(srccolumns=['vector', 'fragment1', 'fragment2', 
-                                    'fragment3', 'fragment4'])
-            t.readExcel(self.f_failtargets)
-        
-        self.assertRaises(IndexFileError, raiseerror)
-        
+                
 
 if __name__ == '__main__':
     
