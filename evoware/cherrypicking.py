@@ -17,9 +17,9 @@
 
 import copy, collections
 
-from . import fileutil as F
-from . import tecan as W
-from . import plates as P
+from evoware import fileutil as F
+from evoware import tecan as W
+from evoware import plates as P
 
 import xlrd as X  ## third party dependency
 
@@ -548,7 +548,7 @@ class CherryWorklist(object):
     
 ######################
 ### Module testing ###
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test PlateFormat"""

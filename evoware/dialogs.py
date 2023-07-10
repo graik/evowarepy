@@ -19,7 +19,7 @@ import tkinter, tkinter.filedialog, tkinter.messagebox
 import sys, traceback, inspect
 import os
 
-from . import fileutil as F
+import evoware.fileutil as F
 
 ## create package-wide hidden window for unattached dialog boxes
 root = tkinter.Tk()
@@ -99,7 +99,7 @@ def __lastError():
 
 ######################
 ### Module testing ###
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test dialogs"""

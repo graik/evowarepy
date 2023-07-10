@@ -79,7 +79,7 @@ class ExampleClass( object ):
 
 ######################
 ### Module testing ###
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test GoodCodeTemplate"""

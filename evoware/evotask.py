@@ -17,7 +17,7 @@ import os.path as osp
 import os
 import logging, logging.handlers
 
-from . import fileutil as F
+import evoware.fileutil as F
 
 class EvoTask(object):
     """
@@ -118,7 +118,7 @@ class EvoTask(object):
 
 ######################
 ### Module testing ###
-from . import testing
+from evoware import testing
 
 class Test(testing.AutoTest):
     """Test Worklist"""
