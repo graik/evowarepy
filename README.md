@@ -8,12 +8,10 @@ Limitations
 
 evowarepy is using `xlrd` for reading and writing Excel files. Unfortunately, xlrd only works with the older **.xls** format (Previous versions of the package were also reading xlsx but this was error-prone and more recent versions of xlrd reject xlsx files.)
 
-Manual Setup
+Requirements
 ------------
-
 Since all this is yet a bit experimental, setup has not been streamlined yet. Here is what we need at the end:
 
-*Requirements:*
   * Python (3.x)
   * Python TkInter extension (needed for showing file open and warning / info dialogs)
   * python packages numpy, xlrd
@@ -24,7 +22,7 @@ Since all this is yet a bit experimental, setup has not been streamlined yet. He
 The python scripts in evoware/scripts can then be executed from regular Tecan Evoware scripts. They will read in Excel files as needed and create pipetting worklist files. These worklist files are then executed using the standard Evoware instruction. 
 
 Installation based on win-bash:
--------------------------------
+--------------------------------
 
 1. download and install Python 3.11 for Windows
 2. download and install Git commandline (and GUI) for Windows: https://git-scm.com
