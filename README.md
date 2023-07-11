@@ -56,7 +56,7 @@ based on a linux bash terminal with git support which will allow us to quickly u
 4. Fetch and install evoware package through Win-bash terminal:
      *  `cd`
      *  `git clone https://github.com/graik/evowarepy.git`
-     *  `pip install evowarepy`
+     *  `pip install ./evowarepy`
 5. Test the installation:
      * `cd evowarepy/evoware`
      * `python testing.py -e OLD`
