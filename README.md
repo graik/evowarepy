@@ -48,6 +48,6 @@ Development setup on OSX
   * `git clone https://github.com/graik/evowarepy.git`
     * will create a `evowarepy` folder in your current directory
   * `pip install -e evowarepy`
-    * installs python dependencies (from requirements.txt and then **links** the evoware package into the python site-packages folder)
+    * installs python dependencies (from requirements.txt and then **links** the evoware package into the python site-packages folder; that means the local evowarepy folder remains the actual location of the package which can then easily be modified and updated with git)
 
 Test the python package as shown above
