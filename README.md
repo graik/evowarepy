@@ -15,8 +15,7 @@ Since all this is yet a bit experimental, setup has not been streamlined yet. He
   * Python (3.x)
   * Python TkInter extension (needed for showing file open and warning / info dialogs)
   * python packages numpy, xlrd
-  * `evoware` python package folder (found within the evowarepy project directory)
-    * this folder has to be added to the PYTHONPATH system or user variable
+  * `evoware` python package (found within the evowarepy project directory)
   * `evoware/scripts` folder with end-user programs (also found within evowarepy project directory)
 
 The python scripts in evoware/scripts can then be executed from regular Tecan Evoware scripts. They will read in Excel files as needed and create pipetting worklist files. These worklist files are then executed using the standard Evoware instruction. 
