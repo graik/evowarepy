@@ -23,38 +23,17 @@ Since all this is yet a bit experimental, setup has not been streamlined yet. He
 
 The python scripts in evoware/scripts can then be executed from regular Tecan Evoware scripts. They will read in Excel files as needed and create pipetting worklist files. These worklist files are then executed using the standard Evoware instruction. 
 
-*Low-tech but a little tedious strategy:*
-
-1. Download and install Python 3.11 for Windows
-2. Create a folder `py` and a folder `pyscripts` in your local user directory or elsewhere, e.g. in `C:\Users\robotadmin\`
-3. Download the current evowarepy code base as a zip file:
-   * https://github.com/graik/evowarepy/archive/refs/heads/master.zip
-   * (in case the link doesn't work: from github repo, look for the green "Code" button and there for the zip file option)
-4. Unpack this zipfile into a temporary location
-5. Move the `evoware` subfolder of `evowarepy` into `C:\Users\robotadmin\py\`
-6. Move the **content** of the `scripts` subfolder into `C:\Users\robotadmin\pyscripts\`
-7. Install python dependencies:
-   * open Windows CMD terminal: (Start - type CMD)
-   * `pip install xlrd numpy`
-8. Add evoware to PYTHONPATH environment variable:
-   * START / Computer / System Properties / Advanced System Settings
-   * look for PYTHONPATH and add `C:\Users\robotadmin\py\` or whereever evoware was moved
-9. Test your installation:
-   * Run Windows CMD terminal (START - CMD)
-   * `cd Users/robotadmin/py/evoware` (change according to your user directory)
-   * `python testing.py -e OLD`
-
-*Slightly more flexible strategy*
-
-based on a linux bash terminal with git support which will allow us to quickly update the evowarepy code on the fly as the project progresses:
+Installation based on win-bash:
+-------------------------------
 
 1. download and install Python 3.11 for Windows
-2. download and install Git commandline and GUI for Windows: https://git-scm.com
+2. download and install Git commandline (and GUI) for Windows: https://git-scm.com
 3. download Win-bash from https://sourceforge.net/projects/win-bash/files/shell-complete/latest/
      * extract to new folder in `C:\Program Files`
      * optional: add this folder to PATH using  START / Computer / System Properties / Advanced System Settings
+     * create a link to the `bash.exe` in Start menu
 4. Fetch and install evoware package through Win-bash terminal:
-     *  `cd`
+     *  `cd temp`  ## move into a temporary directory
      *  `git clone https://github.com/graik/evowarepy.git`
      *  `pip install ./evowarepy`
 5. Test the installation:
