@@ -32,11 +32,12 @@ Installation based on win-bash:
      * optional: add this folder to PATH using  START / Computer / System Properties / Advanced System Settings
      * create a link to the `bash.exe` in Start menu
 5. Fetch and install evoware package through Win-bash terminal:
-     *  `cd temp`  ## move into a temporary directory
+     *  `cd /Users/labuser/`  ## move into your user folder or any alternative location
+     *  `mkdir py; cd py` ## create a folder for the python source code
      *  `git clone https://github.com/graik/evowarepy.git`
-     *  `pip install ./evowarepy`
+     *  `pip install ./evowarepy` 
 6. Test the installation:
-     * `cd evowarepy/evoware`
+     * `cd py/evowarepy/evoware`
      * `python testing.py -e OLD`
        * Note: this will bring up a couple of dialog boxes, including fake error messages... that's OK, it's part of the testing
 
