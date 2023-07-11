@@ -25,18 +25,20 @@ Installation based on win-bash:
 --------------------------------
 
 1. download and install Python 3.11 for Windows
-2. download and install Git commandline (and GUI) for Windows: https://git-scm.com
-3. download Win-bash from https://sourceforge.net/projects/win-bash/files/shell-complete/latest/
+     * ensure the TK/TKinter checkbox is checked
+3. download and install Git commandline (and GUI) for Windows: https://git-scm.com
+4. download Win-bash from https://sourceforge.net/projects/win-bash/files/shell-complete/latest/
      * extract to new folder in `C:\Program Files`
      * optional: add this folder to PATH using  START / Computer / System Properties / Advanced System Settings
      * create a link to the `bash.exe` in Start menu
-4. Fetch and install evoware package through Win-bash terminal:
+5. Fetch and install evoware package through Win-bash terminal:
      *  `cd temp`  ## move into a temporary directory
      *  `git clone https://github.com/graik/evowarepy.git`
      *  `pip install ./evowarepy`
-5. Test the installation:
+6. Test the installation:
      * `cd evowarepy/evoware`
      * `python testing.py -e OLD`
+       * Note: this will bring up a couple of dialog boxes, including fake error messages... that's OK, it's part of the testing
 
 
 Development setup on OSX
